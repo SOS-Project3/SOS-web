@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SOS Status</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body>
+  <h1>S.O.S Project Status</h1>
+  <h2>Status: <span id="status">Loading...</span></h2>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCXDxynz9AKrexXIUmvza8xnPA2HriiePQ",
+      authDomain: "sos-project-23171.firebaseapp.com",
+      databaseURL: "https://sos-project-23171-default-rtdb.firebaseio.com",
+      projectId: "sos-project-23171",
+      storageBucket: "sos-project-23171.appspot.com",
+      messagingSenderId: "739080997565",
+      appId: "1:739080997565:web:8794ee9ba4f4f27de4c5d4",
+      measurementId: "G-WXLYFGBX7M"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    const dbRef = firebase.database().ref("device/status");
+
+    dbRef.on("value", (snapshot) => {
+      document.getElementById("status").textContent = snapshot.val();
+    });
+  </script>
+</body>
+</html>
