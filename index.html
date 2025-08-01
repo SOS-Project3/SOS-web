@@ -1,31 +1,47 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>SOS Status</title>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <title>SOS Project Monitor</title>
+  <meta charset="UTF-8" />
 </head>
 <body>
-  <h1>S.O.S Project Status</h1>
-  <h2>Status: <span id="status">Loading...</span></h2>
+  <h1>SOS BBQ Monitor</h1>
+  <p><strong>Temperature:</strong> <span id="temp">Loading...</span> °C</p>
+  <p><strong>Meat Type:</strong> <span id="meat">Loading...</span></p>
+  <p><strong>Status:</strong> <span id="status">Loading...</span></p>
 
-  <script>
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyCXDxynz9AKrexXIUmvza8xnPA2HriiePQ",
       authDomain: "sos-project-23171.firebaseapp.com",
       databaseURL: "https://sos-project-23171-default-rtdb.firebaseio.com",
       projectId: "sos-project-23171",
-      storageBucket: "sos-project-23171.appspot.com",
+      storageBucket: "sos-project-23171.firebasestorage.app",
       messagingSenderId: "739080997565",
-      appId: "1:739080997565:web:8794ee9ba4f4f27de4c5d4",
-      measurementId: "G-WXLYFGBX7M"
+      appId: "1:739080997565:web:8794ee9ba4f4f27de4c5d4"
     };
 
-    firebase.initializeApp(firebaseConfig);
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-    const dbRef = firebase.database().ref("device/status");
+    // Listen to values
+    const tempRef = ref(db, "sos/temperature");
+    const meatRef = ref(db, "sos/meat");
+    const statusRef = ref(db, "sos/status");
 
-    dbRef.on("value", (snapshot) => {
+    onValue(tempRef, (snapshot) => {
+      document.getElementById("temp").textContent = snapshot.val();
+    });
+
+    onValue(meatRef, (snapshot) => {
+      document.getElementById("meat").textContent = snapshot.val();
+    });
+
+    onValue(statusRef, (snapshot) => {
       document.getElementById("status").textContent = snapshot.val();
     });
   </script>
