@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Connect to SOS BBQ</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #2980b9;
+      color: white;
+      display: flex;
+      height: 100vh;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+    }
+    .connect-box {
+      background: white;
+      color: #333;
+      padding: 40px;
+      border-radius: 12px;
+      text-align: center;
+      width: 300px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    }
+    button {
+      background: #2980b9;
+      border: none;
+      color: white;
+      padding: 15px 30px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 20px;
+      width: 100%;
+    }
+    button:hover {
+      background: #1e6fa4;
+    }
+  </style>
+</head>
+<body>
+  <div class="connect-box">
+    <h1>Welcome to SOS BBQ</h1>
+    <p>Click connect to start monitoring your BBQ!</p>
+    <button id="connectBtn">Connect</button>
+  </div>
+
+  <script>
+    document.getElementById('connectBtn').addEventListener('click', () => {
+      window.location.href = "index.html";
+    });
+  </script>
+</body>
+</html>
