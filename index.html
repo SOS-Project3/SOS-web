@@ -1,18 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>SOS Project Monitor</title>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SOS BBQ Monitor</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="firebase-output">Waiting for data...</div>
-  <h1>SOS BBQ Monitor</h1>
-  
-  <p><strong>Temperature:</strong> <span id="temp">Loading...</span> °C</p>
-  <p><strong>Meat Type:</strong> <span id="meat">Loading...</span></p>
-  <p><strong>Status:</strong> <span id="status">Loading...</span></p>
+  <div class="container">
+    <h1>SOS BBQ Monitor</h1>
 
-  <!-- Load your script.js with all Firebase logic -->
+    <div class="live-section">
+      <h2>Live Data</h2>
+      <p><strong>Temperature:</strong> <span id="temp">--</span> °C</p>
+      <p><strong>Status:</strong> <span id="status">--</span></p>
+      <p><strong>Meat Type:</strong> <span id="meat">--</span></p>
+    </div>
+
+    <div class="control-section">
+      <h2>Set Preferences</h2>
+      <label for="meatSelect">Meat Type:</label>
+      <select id="meatSelect">
+        <option value="" disabled selected>Select meat</option>
+        <option value="Chicken">Chicken</option>
+        <option value="Beef">Beef</option>
+        <option value="Lamb">Lamb</option>
+        <option value="Fish">Fish</option>
+      </select>
+
+      <label for="donenessSelect">Doneness:</label>
+      <select id="donenessSelect">
+        <option value="" disabled selected>Select doneness</option>
+        <option value="Rare">Rare</option>
+        <option value="Medium">Medium</option>
+        <option value="Well Done">Well Done</option>
+      </select>
+
+      <button id="sendBtn">Send to Device</button>
+      <p id="confirmation" class="hidden">✅ Selection sent!</p>
+    </div>
+  </div>
+
   <script type="module" src="script.js"></script>
 </body>
 </html>
