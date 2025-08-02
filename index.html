@@ -15,6 +15,7 @@
       <p><strong>Temperature:</strong> <span id="temp">--</span> °C</p>
       <p><strong>Status:</strong> <span id="status">--</span></p>
       <p><strong>Meat Type:</strong> <span id="meatDisplay">--</span></p>
+      <!-- ESP Connection Status will be appended here -->
     </div>
 
     <div class="control-section">
@@ -80,6 +81,7 @@
     const statusRef = ref(db, "sos/status");
     const meatRef = ref(db, "sos/userInput/meat_type");
     const donenessRef = ref(db, "sos/userInput/doneness");
+    const espPingRef = ref(db, "sos/esp_status/last_ping");
 
     // Update UI live from Firebase
     onValue(tempRef, (snapshot) => {
@@ -91,78 +93,4 @@
     });
 
     onValue(meatRef, (snapshot) => {
-      const meat = snapshot.val();
-      document.getElementById("meatDisplay").textContent = meat ?? "--";
-      if(meat){
-        document.getElementById("meatSelect").value = meat;
-        updateDonenessForMeat(); // update doneness on meat change
-      }
-    });
-
-    onValue(donenessRef, (snapshot) => {
-      const doneness = snapshot.val();
-      if(doneness){
-        document.getElementById("donenessSelect").value = doneness;
-      }
-    });
-
-    // Elements for logic
-    const meatSelect = document.getElementById("meatSelect");
-    const donenessSelect = document.getElementById("donenessSelect");
-    const donenessNote = document.getElementById("donenessNote");
-
-    // Function to update doneness dropdown based on meat selection
-    function updateDonenessForMeat() {
-      const meat = meatSelect.value;
-      if (meat === "Chicken") {
-        donenessSelect.value = "Well Done";
-        donenessSelect.disabled = true;
-        donenessNote.classList.remove("hidden");
-      } else {
-        donenessSelect.disabled = false;
-        donenessNote.classList.add("hidden");
-        if (donenessSelect.value === "Well Done") {
-          donenessSelect.value = "";
-        }
-      }
-    }
-
-    // Listen to meat selection changes
-    meatSelect.addEventListener("change", updateDonenessForMeat);
-
-    // Call on page load for initial state
-    updateDonenessForMeat();
-
-    // Send button logic
-    document.getElementById("sendBtn").addEventListener("click", () => {
-      const meat = meatSelect.value;
-      const doneness = donenessSelect.value;
-
-      if (!meat || !doneness) {
-        alert("Please select both meat type and doneness.");
-        return;
-      }
-
-      set(ref(db, "sos/userInput"), {
-        meat_type: meat,
-        doneness: doneness,
-      }).then(() => {
-        const confirmText = document.getElementById("confirmation");
-        confirmText.classList.remove("hidden");
-        confirmText.textContent = `✅ Sent: ${meat} - ${doneness}`;
-
-        setTimeout(() => {
-          confirmText.classList.add("hidden");
-        }, 3000);
-      }).catch((error) => {
-        alert("Error sending data: " + error.message);
-      });
-    });
-
-    // Logout button redirects to connection page
-    document.getElementById("logoutBtn").addEventListener("click", () => {
-      window.location.href = "connection.html";
-    });
-  </script>
-</body>
-</html>
+      const meat =
