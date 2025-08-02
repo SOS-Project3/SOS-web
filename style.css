@@ -63,6 +63,15 @@ button:hover {
   display: none;
 }
 
+.logout-btn {
+  background-color: #e74c3c;
+  margin-top: 10px;
+}
+
+.logout-btn:hover {
+  background-color: #c0392b;
+}
+
 #confirmation {
   margin-top: 10px;
   color: green;
