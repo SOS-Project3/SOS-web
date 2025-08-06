@@ -2,48 +2,39 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Smart Oven and Skewer (SOS)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Oven and Skewer</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>Smart Oven and Skewer</h1>
+  <h1>Smart Oven and Skewer (S.O.S)</h1>
 
-    <div class="controls">
-      <label for="meatSelect">Choose Meat Type:</label>
-      <select id="meatSelect">
-        <option value="none">-- Select --</option>
-        <option value="beef">Beef</option>
-        <option value="chicken">Chicken</option>
-        <option value="lamb">Lamb</option>
-      </select>
+  <div class="section">
+    <label for="meat">Select Meat Type:</label>
+    <select id="meat">
+      <option value="chicken">Chicken</option>
+      <option value="beef">Beef</option>
+      <option value="lamb">Lamb</option>
+      <option value="fish">Fish</option>
+    </select>
+  </div>
 
-      <label for="donenessSelect">Choose Doneness:</label>
-      <select id="donenessSelect">
-        <option value="none">-- Select --</option>
-        <option value="rare">Rare</option>
-        <option value="medium">Medium</option>
-        <option value="well">Well Done</option>
-      </select>
+  <div class="section" id="doneness-section">
+    <label for="doneness">Select Doneness Level:</label>
+    <select id="doneness">
+      <option value="rare">Rare</option>
+      <option value="medium">Medium</option>
+      <option value="well">Well Done</option>
+    </select>
+  </div>
 
-      <button id="startBtn">Start Cooking</button>
-    </div>
+  <div class="section">
+    <button id="startBtn">Start Cooking</button>
+    <button id="stopBtn">Stop Cooking</button>
+  </div>
 
-    <div class="status">
-      <p><strong>Status:</strong> <span id="status">OFF</span></p>
-      <p><strong>Oven Temp:</strong> <span id="temperature">0</span>°C</p>
-    </div>
-
-    <div class="skewer">
-      <h2>Skewer Info</h2>
-      <p><strong>Meat Type:</strong> <span id="meatType">none</span></p>
-      <p><strong>Target Temp:</strong> <span id="targetTemp">0</span>°C</p>
-      <p><strong>Current Temp:</strong> <span id="currentTemp">0</span>°C</p>
-      <p><strong>Cooking:</strong> <span id="isCooking">false</span></p>
-    </div>
-
-    <!-- Logout button was here, now removed -->
+  <div class="status">
+    <p id="statusMessage">Status: Idle</p>
   </div>
 
   <script type="module" src="script.js"></script>
