@@ -3,40 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Smart Oven and Skewer</title>
+  <title>SOS BBQ Monitor</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Smart Oven and Skewer (S.O.S)</h1>
+  <div class="container">
+    <h1>Smart BBQ Monitor</h1>
 
-  <div class="section">
-    <label for="meat">Select Meat Type:</label>
-    <select id="meat">
-      <option value="chicken">Chicken</option>
-      <option value="beef">Beef</option>
-      <option value="lamb">Lamb</option>
-      <option value="fish">Fish</option>
-    </select>
+    <div class="form-group">
+      <label for="meatType">Choose Meat Type:</label>
+      <select id="meatType">
+        <option value="">-- Select --</option>
+        <option value="Chicken">Chicken</option>
+        <option value="Tri tip">Tri tip</option>
+        <option value="Knuckle">Knuckle</option>
+        <option value="Flap">Flap</option>
+        <option value="Top round">Top round</option>
+        <option value="Top sirloin">Top sirloin</option>
+        <option value="Flank">Flank</option>
+        <option value="Sirloin cap">Sirloin cap</option>
+        <option value="Chuck / teres major">Chuck / teres major</option>
+        <option value="Steak cut / strip loin">Steak cut / strip loin</option>
+        <option value="Rib / ribeye">Rib / ribeye</option>
+        <option value="Flat iron">Flat iron</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="doneness">Degree of Doneness:</label>
+      <select id="doneness">
+        <option value="">-- Select --</option>
+        <option value="Rare">Rare</option>
+        <option value="Medium Rare">Medium Rare</option>
+        <option value="Medium">Medium</option>
+        <option value="Medium Well">Medium Well</option>
+        <option value="Well Done">Well Done</option>
+      </select>
+    </div>
+
+    <button id="sendDataBtn">Send to ESP32</button>
+
+    <h2>Status</h2>
+    <p id="status">Waiting for data...</p>
   </div>
 
-  <div class="section" id="doneness-section">
-    <label for="doneness">Select Doneness Level:</label>
-    <select id="doneness">
-      <option value="rare">Rare</option>
-      <option value="medium">Medium</option>
-      <option value="well">Well Done</option>
-    </select>
-  </div>
-
-  <div class="section">
-    <button id="startBtn">Start Cooking</button>
-    <button id="stopBtn">Stop Cooking</button>
-  </div>
-
-  <div class="status">
-    <p id="statusMessage">Status: Idle</p>
-  </div>
-
-  <script type="module" src="script.js"></script>
+  <script type="module" src="main.js"></script>
 </body>
 </html>
