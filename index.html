@@ -14,7 +14,7 @@
       <h2>Live Data</h2>
       <p><strong>Temperature:</strong> <span id="temp">--</span> °C</p>
       <p><strong>Status:</strong> <span id="status">--</span></p>
-      <p><strong>Meat Type:</strong> <span id="meatDisplay">--</span></p>
+      <!-- Removed meatDisplay line here -->
       <!-- ESP Connection Status will be appended here -->
     </div>
 
@@ -143,7 +143,6 @@
     // When Firebase updates the meat:
     onValue(meatRef, (snapshot) => {
       const meat = snapshot.val();
-      document.getElementById("meatDisplay").textContent = meat ?? "--";
       if (meat) {
         meatSelect.value = meat;
         updateDonenessForMeat();
