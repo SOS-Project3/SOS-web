@@ -2,200 +2,88 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SOS BBQ Monitor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SOS - Smart Oven & Skewer</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
-    <h1>SOS BBQ Monitor</h1>
+    <h1>Welcome to the Smart Oven & Skewer (S.O.S)</h1>
 
-    <div class="live-section">
-      <h2>Live Data</h2>
-      <p><strong>Temperature:</strong> <span id="temp">--</span> °C</p>
-      <p><strong>Status:</strong> <span id="status">--</span></p>
-      <!-- Removed meatDisplay line here -->
-      <!-- ESP Connection Status will be appended here -->
-    </div>
-
-    <div class="control-section">
-      <h2>Set Preferences</h2>
-      
-      <label for="meatSelect">Meat Type:</label>
-      <select id="meatSelect">
-        <option value="" disabled selected>Select meat</option>
-        <option value="Chicken">Chicken</option>
-        <option value="Tri tip">Tri tip</option>
-        <option value="Knuckle">Knuckle</option>
-        <option value="Flap">Flap</option>
-        <option value="Top round">Top round</option>
-        <option value="Top sirloin">Top sirloin</option>
-        <option value="Flank">Flank</option>
-        <option value="Sirloin cap">Sirloin cap</option>
-        <option value="Chuck / teres major">Chuck / teres major</option>
-        <option value="Steak cut / strip loin">Steak cut / strip loin</option>
-        <option value="Rib / ribeye">Rib / ribeye</option>
-        <option value="Flat iron">Flat iron</option>
+    <form id="meatForm">
+      <label for="meat">Choose your meat:</label>
+      <select id="meat" required>
+        <option value="">Select meat</option>
+        <option value="beef">Beef</option>
+        <option value="chicken">Chicken</option>
+        <option value="lamb">Lamb</option>
+        <option value="fish">Fish</option>
       </select>
 
-      <label for="donenessSelect">Doneness:</label>
-      <select id="donenessSelect">
-        <option value="" disabled selected>Select doneness</option>
-        <option value="Rare">Rare</option>
-        <option value="Medium Rare">Medium Rare</option>
-        <option value="Medium">Medium</option>
-        <option value="Medium Well">Medium Well</option>
-        <option value="Well Done">Well Done</option>
+      <label for="doneness">Choose doneness:</label>
+      <select id="doneness" required>
+        <option value="">Select doneness</option>
+        <option value="rare">Rare</option>
+        <option value="medium">Medium</option>
+        <option value="well">Well Done</option>
       </select>
-      <p id="donenessNote" class="hidden" style="color: #555; font-size: 0.9em; margin-top: 5px;">
-        Chicken is always cooked Well Done.
-      </p>
 
-      <button id="sendBtn">Send to Device</button>
-      <p id="confirmation" class="hidden">✅ Selection sent!</p>
+      <button type="submit">Submit</button>
+    </form>
 
-      <!-- Logout button removed -->
-    </div>
+    <p id="statusMessage"></p>
   </div>
 
   <!-- Firebase SDKs -->
   <script type="module">
+    // Firebase imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
+    // Your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCXDxynz9AKrexXIUmvza8xnPA2HriiePQ",
       authDomain: "sos-project-23171.firebaseapp.com",
       databaseURL: "https://sos-project-23171-default-rtdb.firebaseio.com",
       projectId: "sos-project-23171",
-      storageBucket: "sos-project-23171.firebasestorage.app",
+      storageBucket: "sos-project-23171.appspot.com",
       messagingSenderId: "739080997565",
-      appId: "1:739080997565:web:8794ee9ba4f4f27de4c5d4"
+      appId: "1:739080997565:web:8794ee9ba4f4f27de4c5d4",
+      measurementId: "G-WXLYFGBX7M"
     };
 
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    const database = getDatabase(app);
 
-    // Firebase references
-    const tempRef = ref(db, "sos/temperature");
-    const statusRef = ref(db, "sos/status");
-    const meatRef = ref(db, "sos/userInput/meat_type");
-    const donenessRef = ref(db, "sos/userInput/doneness");
-    const espPingRef = ref(db, "sos/esp_status/last_ping");
+    // Form logic
+    const form = document.getElementById("meatForm");
+    const statusMessage = document.getElementById("statusMessage");
 
-    // Update UI live from Firebase
-    onValue(tempRef, (snapshot) => {
-      document.getElementById("temp").textContent = snapshot.val() ?? "--";
-    });
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
 
-    onValue(statusRef, (snapshot) => {
-      document.getElementById("status").textContent = snapshot.val() ?? "--";
-    });
-
-    // ESP connection status element
-    const espStatusElement = document.createElement("p");
-    espStatusElement.style.fontWeight = "bold";
-    espStatusElement.style.marginTop = "10px";
-    document.querySelector(".live-section").appendChild(espStatusElement);
-
-    // Listen for ESP heartbeat / connection status
-    onValue(espPingRef, (snapshot) => {
-      const lastPing = snapshot.val();
-      if (!lastPing) {
-        espStatusElement.textContent = "ESP is disconnected ⚠️";
-        espStatusElement.style.color = "red";
-        return;
-      }
-      const now = Date.now();
-      const pingTime = new Date(lastPing).getTime();
-      const diffSeconds = (now - pingTime) / 1000;
-
-      if (diffSeconds < 20) {
-        espStatusElement.textContent = "ESP is connected ✅";
-        espStatusElement.style.color = "green";
-      } else {
-        espStatusElement.textContent = "ESP is disconnected ⚠️";
-        espStatusElement.style.color = "red";
-      }
-    });
-
-    // Elements for logic
-    const meatSelect = document.getElementById("meatSelect");
-    const donenessSelect = document.getElementById("donenessSelect");
-    const donenessNote = document.getElementById("donenessNote");
-
-    // Function to update doneness dropdown based on meat selection
-    function updateDonenessForMeat() {
-      const meat = meatSelect.value;
-      if (meat === "Chicken") {
-        donenessSelect.value = "Well Done";
-        donenessSelect.disabled = true;
-        donenessNote.classList.remove("hidden");
-      } else {
-        donenessSelect.disabled = false;
-        donenessNote.classList.add("hidden");
-        if (donenessSelect.value === "Well Done") {
-          donenessSelect.value = "";
-        }
-      }
-    }
-
-    // When Firebase updates the meat:
-    onValue(meatRef, (snapshot) => {
-      const meat = snapshot.val();
-      if (meat) {
-        meatSelect.value = meat;
-        updateDonenessForMeat();
-      }
-    });
-
-    // When Firebase updates the doneness:
-    onValue(donenessRef, (snapshot) => {
-      const doneness = snapshot.val();
-      if (doneness) {
-        if (meatSelect.value !== "Chicken") {
-          donenessSelect.value = doneness;
-        } else {
-          donenessSelect.value = "Well Done";
-          donenessSelect.disabled = true;
-          donenessNote.classList.remove("hidden");
-        }
-      }
-    });
-
-    // Listen to meat selection changes
-    meatSelect.addEventListener("change", updateDonenessForMeat);
-
-    // Call on page load for initial state
-    updateDonenessForMeat();
-
-    // Send button logic
-    document.getElementById("sendBtn").addEventListener("click", () => {
-      const meat = meatSelect.value;
-      const doneness = donenessSelect.value;
+      const meat = document.getElementById("meat").value;
+      const doneness = document.getElementById("doneness").value;
 
       if (!meat || !doneness) {
-        alert("Please select both meat type and doneness.");
+        statusMessage.textContent = "Please select both options.";
         return;
       }
 
-      set(ref(db, "sos/userInput"), {
-        meat_type: meat,
-        doneness: doneness,
-      }).then(() => {
-        const confirmText = document.getElementById("confirmation");
-        confirmText.classList.remove("hidden");
-        confirmText.textContent = `✅ Sent: ${meat} - ${doneness}`;
-
-        setTimeout(() => {
-          confirmText.classList.add("hidden");
-        }, 3000);
-      }).catch((error) => {
-        alert("Error sending data: " + error.message);
+      // Write to Firebase
+      set(ref(database, 'selection/'), {
+        meat: meat,
+        doneness: doneness
+      })
+      .then(() => {
+        statusMessage.textContent = "Your selection was saved successfully!";
+      })
+      .catch((error) => {
+        console.error(error);
+        statusMessage.textContent = "Error saving selection.";
       });
     });
-
-    // Removed logout button event listener
   </script>
 </body>
 </html>
