@@ -7,40 +7,46 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>Welcome to the Smart Oven & Skewer (S.O.S)</h1>
+  <header>
+    <h1>Smart Oven & Skewer (S.O.S)</h1>
+  </header>
 
-    <form id="meatForm">
-      <label for="meat">Choose your meat:</label>
-      <select id="meat" required>
-        <option value="">Select meat</option>
-        <option value="beef">Beef</option>
-        <option value="chicken">Chicken</option>
-        <option value="lamb">Lamb</option>
-        <option value="fish">Fish</option>
-      </select>
+  <main>
+    <section class="form-section">
+      <h2>Send Cooking Parameters</h2>
+      <form id="cookingForm">
+        <label for="temperature">Temperature (°C):</label>
+        <input type="number" id="temperature" name="temperature" required /><br />
 
-      <label for="doneness">Choose doneness:</label>
-      <select id="doneness" required>
-        <option value="">Select doneness</option>
-        <option value="rare">Rare</option>
-        <option value="medium">Medium</option>
-        <option value="well">Well Done</option>
-      </select>
+        <label for="duration">Duration (min):</label>
+        <input type="number" id="duration" name="duration" required /><br />
 
-      <button type="submit">Submit</button>
-    </form>
+        <label for="meatType">Meat Type:</label>
+        <select id="meatType" name="meatType">
+          <option value="chicken">Chicken</option>
+          <option value="beef">Beef</option>
+          <option value="lamb">Lamb</option>
+        </select><br />
 
-    <p id="statusMessage"></p>
-  </div>
+        <button type="submit">Submit</button>
+      </form>
+    </section>
 
-  <!-- Firebase SDKs -->
+    <section class="status-section">
+      <h2>Current Status</h2>
+      <p><strong>Temp:</strong> <span id="currentTemp">--</span> °C</p>
+      <p><strong>Time Left:</strong> <span id="timeLeft">--</span> min</p>
+      <p><strong>Skewer Angle:</strong> <span id="skewerAngle">--</span> °</p>
+    </section>
+  </main>
+
+  <!-- Firebase + Logic Script -->
   <script type="module">
-    // Firebase imports
+    // Firebase SDK import
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-    // Your Firebase config
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCXDxynz9AKrexXIUmvza8xnPA2HriiePQ",
       authDomain: "sos-project-23171.firebaseapp.com",
@@ -52,37 +58,46 @@
       measurementId: "G-WXLYFGBX7M"
     };
 
-    // Initialize Firebase
+    // Init Firebase
     const app = initializeApp(firebaseConfig);
-    const database = getDatabase(app);
+    const db = getDatabase(app);
 
-    // Form logic
-    const form = document.getElementById("meatForm");
-    const statusMessage = document.getElementById("statusMessage");
+    // DOM Elements
+    const cookingForm = document.getElementById("cookingForm");
 
-    form.addEventListener("submit", (e) => {
+    // Send data on submit
+    cookingForm.addEventListener("submit", (e) => {
       e.preventDefault();
+      const temperature = document.getElementById("temperature").value;
+      const duration = document.getElementById("duration").value;
+      const meatType = document.getElementById("meatType").value;
 
-      const meat = document.getElementById("meat").value;
-      const doneness = document.getElementById("doneness").value;
-
-      if (!meat || !doneness) {
-        statusMessage.textContent = "Please select both options.";
-        return;
-      }
-
-      // Write to Firebase
-      set(ref(database, 'selection/'), {
-        meat: meat,
-        doneness: doneness
-      })
-      .then(() => {
-        statusMessage.textContent = "Your selection was saved successfully!";
-      })
-      .catch((error) => {
-        console.error(error);
-        statusMessage.textContent = "Error saving selection.";
+      set(ref(db, "cookingParameters"), {
+        temperature: Number(temperature),
+        duration: Number(duration),
+        meatType: meatType
+      }).then(() => {
+        alert("Data sent successfully to Firebase!");
+        cookingForm.reset();
+      }).catch((error) => {
+        alert("Error sending data: " + error.message);
       });
+    });
+
+    // Listen for status updates
+    const currentTemp = document.getElementById("currentTemp");
+    const timeLeft = document.getElementById("timeLeft");
+    const skewerAngle = document.getElementById("skewerAngle");
+
+    const statusRef = ref(db, "status");
+
+    onValue(statusRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        currentTemp.textContent = data.temperature ?? "--";
+        timeLeft.textContent = data.timeLeft ?? "--";
+        skewerAngle.textContent = data.skewerAngle ?? "--";
+      }
     });
   </script>
 </body>
