@@ -1,25 +1,169 @@
+None selected 
+
+Skip to content
+Using Gmail with screen readers
+Enable desktop notifications for Gmail.
+   OK  No thanks
+Conversations
+Elio Habre
+(no subject)
+ 
+Attachment:
+Mano2.html
+7:03 PM
+1% of 15 GB used
+Terms · Privacy · Program Policies
+Last account activity: 1 hour ago
+Open in 1 other location · Details
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SOS BBQ Monitor</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    :root {
+      --primary: #d32f2f;
+      --secondary: #f57c00;
+      --bg: #fdf3f3;
+      --text: #333;
+      --card-bg: #fff;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      color: var(--primary);
+      font-size: 2.5rem;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      width: 90%;
+      max-width: 1000px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    .live-data h2 {
+      color: var(--secondary);
+      margin-bottom: 10px;
+    }
+
+    .temperature {
+      font-size: 2rem;
+      color: var(--primary);
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .status {
+      font-size: 1.2rem;
+      background: var(--secondary);
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 5px;
+      display: inline-block;
+    }
+
+    form h2 {
+      color: var(--secondary);
+      margin-bottom: 10px;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: bold;
+    }
+
+    select, button {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-bottom: 15px;
+      font-size: 1rem;
+    }
+
+    button {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #b71c1c;
+    }
+
+    footer {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
+  <header>
     <h1>SOS BBQ Monitor</h1>
+  </header>
 
-    <div class="live-section">
-      <h2>Live Data</h2>
-      <p><strong>Temperature:</strong> <span id="temp">--</span> °C</p>
-      <p><strong>Status:</strong> <span id="status">--</span></p>
+  <div class="container">
+    <!-- Live Data -->
+    <div class="card live-data">
+      <h1>Live Data </h1>
+      <div class="temperature">Temperature: -- °C</div>
+      <div class="status">Status: --</div>
     </div>
 
-    <div class="control-section">
-      <h2>Set Preferences</h2>
-      
-      <label for="meatSelect">Meat Type:</label>
+<div class="card">
+<form>
+ <h2><center> Set Preferences </center></h2>
+
+   
+    <div class="card">
+      <form>
+        <label for="meatSelect">Meat Type:</label>
       <select id="meatSelect">
         <option value="" disabled selected>Select meat</option>
         <option value="Chicken">Chicken</option>
@@ -36,7 +180,9 @@
         <option value="Flat iron">Flat iron</option>
       </select>
 
-      <label for="donenessSelect">Doneness:</label>
+
+
+        <label for="donenessSelect">Doneness:</label>
       <select id="donenessSelect">
         <option value="" disabled selected>Select doneness</option>
         <option value="Rare">Rare</option>
@@ -46,142 +192,27 @@
         <option value="Well Done">Well Done</option>
       </select>
       <p id="donenessNote" class="hidden" style="color: #555; font-size: 0.9em; margin-top: 5px;">
-        Chicken is always cooked Well Done.
       </p>
 
-      <!-- ✅ Button label changed here -->
-      <button id="sendBtn">Submit</button>
 
-      <p id="confirmation" class="hidden">✅ Selection sent!</p>
+        <button type="submit">Submit</button>
+        <p style="font-size: 0.8rem; color: #555;">Chicken is always cooked Well Done.</p>
+      <br>
+      <br>
+ 
+<p id="confirmation" class="hidden" align="center">✅ Selection sent!</p>
+    </div>
+  </div>
+      </form>
     </div>
   </div>
 
-  <!-- Firebase SDKs -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCXDxynz9AKrexXIUmvza8xnPA2HriiePQ",
-      authDomain: "sos-project-23171.firebaseapp.com",
-      databaseURL: "https://sos-project-23171-default-rtdb.firebaseio.com",
-      projectId: "sos-project-23171",
-      storageBucket: "sos-project-23171.firebasestorage.app",
-      messagingSenderId: "739080997565",
-      appId: "1:739080997565:web:8794ee9ba4f4f27de4c5d4"
-    };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    // Firebase references
-    const tempRef = ref(db, "sos/temperature");
-    const statusRef = ref(db, "sos/status");
-    const meatRef = ref(db, "sos/userInput/meat_type");
-    const donenessRef = ref(db, "sos/userInput/doneness");
-    const espPingRef = ref(db, "sos/esp_status/last_ping");
-
-    // Update UI live from Firebase
-    onValue(tempRef, (snapshot) => {
-      document.getElementById("temp").textContent = snapshot.val() ?? "--";
-    });
-
-    onValue(statusRef, (snapshot) => {
-      document.getElementById("status").textContent = snapshot.val() ?? "--";
-    });
-
-    const espStatusElement = document.createElement("p");
-    espStatusElement.style.fontWeight = "bold";
-    espStatusElement.style.marginTop = "10px";
-    document.querySelector(".live-section").appendChild(espStatusElement);
-
-    onValue(espPingRef, (snapshot) => {
-      const lastPing = snapshot.val();
-      if (!lastPing) {
-        espStatusElement.textContent = "ESP is disconnected ⚠️";
-        espStatusElement.style.color = "red";
-        return;
-      }
-      const now = Date.now();
-      const pingTime = new Date(lastPing).getTime();
-      const diffSeconds = (now - pingTime) / 1000;
-
-      if (diffSeconds < 20) {
-        espStatusElement.textContent = "ESP is connected ✅";
-        espStatusElement.style.color = "green";
-      } else {
-        espStatusElement.textContent = "ESP is disconnected ⚠️";
-        espStatusElement.style.color = "red";
-      }
-    });
-
-    const meatSelect = document.getElementById("meatSelect");
-    const donenessSelect = document.getElementById("donenessSelect");
-    const donenessNote = document.getElementById("donenessNote");
-
-    function updateDonenessForMeat() {
-      const meat = meatSelect.value;
-      if (meat === "Chicken") {
-        donenessSelect.value = "Well Done";
-        donenessSelect.disabled = true;
-        donenessNote.classList.remove("hidden");
-      } else {
-        donenessSelect.disabled = false;
-        donenessNote.classList.add("hidden");
-        if (donenessSelect.value === "Well Done") {
-          donenessSelect.value = "";
-        }
-      }
-    }
-
-    onValue(meatRef, (snapshot) => {
-      const meat = snapshot.val();
-      if (meat) {
-        meatSelect.value = meat;
-        updateDonenessForMeat();
-      }
-    });
-
-    onValue(donenessRef, (snapshot) => {
-      const doneness = snapshot.val();
-      if (doneness) {
-        if (meatSelect.value !== "Chicken") {
-          donenessSelect.value = doneness;
-        } else {
-          donenessSelect.value = "Well Done";
-          donenessSelect.disabled = true;
-          donenessNote.classList.remove("hidden");
-        }
-      }
-    });
-
-    meatSelect.addEventListener("change", updateDonenessForMeat);
-    updateDonenessForMeat();
-
-    document.getElementById("sendBtn").addEventListener("click", () => {
-      const meat = meatSelect.value;
-      const doneness = donenessSelect.value;
-
-      if (!meat || !doneness) {
-        alert("Please select both meat type and doneness.");
-        return;
-      }
-
-      set(ref(db, "sos/userInput"), {
-        meat_type: meat,
-        doneness: doneness,
-      }).then(() => {
-        const confirmText = document.getElementById("confirmation");
-        confirmText.classList.remove("hidden");
-        confirmText.textContent = `✅ Sent: ${meat} - ${doneness}`;
-
-        setTimeout(() => {
-          confirmText.classList.add("hidden");
-        }, 3000);
-      }).catch((error) => {
-        alert("Error sending data: " + error.message);
-      });
-    });
-  </script>
+  <footer>
+    &copy; 2025 SOS BBQ Project
+  </footer>
 </body>
 </html>
+Mano2.html
+Displaying Mano2.html.
