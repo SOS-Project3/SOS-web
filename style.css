@@ -4,8 +4,9 @@ body {
   color: #333;
   display: flex;
   justify-content: center;
-  align-items: center;
-  height: 100vh;
+  /* remove align-items and height to allow normal scrolling */
+  margin: 0;
+  padding: 20px 0;
 }
 
 .container {
@@ -13,12 +14,15 @@ body {
   padding: 30px 40px;
   border-radius: 8px;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px; /* keeps it readable on mobile */
 }
 
 h1 {
-  margin-bottom: 20px;
-  font-size: 24px;
+  margin-bottom: 30px;
+  font-size: 32px; /* bigger for visibility */
   text-align: center;
+  color: #222;
 }
 
 .form-group {
@@ -31,10 +35,11 @@ label {
   font-weight: bold;
 }
 
-select {
+select, input {
   width: 100%;
   padding: 8px;
   font-size: 16px;
+  margin-bottom: 15px;
 }
 
 button {
@@ -45,6 +50,7 @@ button {
   border: none;
   cursor: pointer;
   width: 100%;
+  border-radius: 5px;
 }
 
 button:hover {
@@ -54,6 +60,12 @@ button:hover {
 h2 {
   margin-top: 30px;
   font-size: 18px;
+}
+
+#wifiConfirmation, #confirmation {
+  color: green;
+  font-weight: bold;
+  margin-top: 5px;
 }
 
 #status {
