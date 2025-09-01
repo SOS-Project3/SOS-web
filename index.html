@@ -5,17 +5,75 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SOS BBQ Monitor</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Simple inline styles for visual separation */
+    .wifi-section, .live-section, .control-section {
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+      background-color: #f9f9f9;
+    }
+
+    .wifi-section h2, .live-section h2, .control-section h2 {
+      margin-top: 0;
+    }
+
+    input, select, button {
+      display: block;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      padding: 8px;
+      width: 100%;
+      max-width: 300px;
+      font-size: 1em;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
     <h1>SOS BBQ Monitor</h1>
 
+    <!-- Wi-Fi Configuration Section -->
+    <div class="wifi-section">
+      <h2>Wi-Fi Configuration</h2>
+      
+      <label for="wifiName">Wi-Fi Name (SSID):</label>
+      <input type="text" id="wifiName" placeholder="Enter Wi-Fi name" />
+
+      <label for="wifiPass">Password:</label>
+      <input type="password" id="wifiPass" placeholder="Enter Wi-Fi password" />
+
+      <button id="wifiSendBtn">Send Wi-Fi</button>
+
+      <p id="wifiConfirmation" class="hidden">✅ Wi-Fi info sent!</p>
+    </div>
+
+    <!-- Live Data Section -->
     <div class="live-section">
       <h2>Live Data</h2>
       <p><strong>Temperature:</strong> <span id="temp">--</span> °C</p>
       <p><strong>Status:</strong> <span id="status">--</span></p>
     </div>
 
+    <!-- Control Section -->
     <div class="control-section">
       <h2>Set Preferences</h2>
       
@@ -157,6 +215,7 @@
     meatSelect.addEventListener("change", updateDonenessForMeat);
     updateDonenessForMeat();
 
+    // Meat/Doneness submit
     document.getElementById("sendBtn").addEventListener("click", () => {
       const meat = meatSelect.value;
       const doneness = donenessSelect.value;
@@ -179,6 +238,36 @@
         }, 3000);
       }).catch((error) => {
         alert("Error sending data: " + error.message);
+      });
+    });
+
+    // Wi-Fi submit
+    const wifiNameInput = document.getElementById("wifiName");
+    const wifiPassInput = document.getElementById("wifiPass");
+    const wifiSendBtn = document.getElementById("wifiSendBtn");
+    const wifiConfirmation = document.getElementById("wifiConfirmation");
+
+    wifiSendBtn.addEventListener("click", () => {
+      const ssid = wifiNameInput.value.trim();
+      const password = wifiPassInput.value;
+
+      if (!ssid || !password) {
+        alert("Please enter both Wi-Fi name and password.");
+        return;
+      }
+
+      set(ref(db, "sos/wifi_config"), {
+        ssid: ssid,
+        password: password
+      }).then(() => {
+        wifiConfirmation.classList.remove("hidden");
+        wifiConfirmation.textContent = `✅ Wi-Fi sent: ${ssid}`;
+
+        setTimeout(() => {
+          wifiConfirmation.classList.add("hidden");
+        }, 3000);
+      }).catch((error) => {
+        alert("Error sending Wi-Fi info: " + error.message);
       });
     });
   </script>
