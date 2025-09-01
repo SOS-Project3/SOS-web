@@ -4,29 +4,30 @@ body {
   color: #333;
   display: flex;
   justify-content: center;
-  /* remove align-items and height to allow normal scrolling */
   margin: 0;
   padding: 20px 0;
 }
 
 .container {
   background: white;
-  padding: 30px 40px;
+  padding: 30px 20px; /* slightly smaller padding for phones */
   border-radius: 8px;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 400px; /* keeps it readable on mobile */
+  max-width: 400px;
+  box-sizing: border-box;
 }
 
 h1 {
-  margin-bottom: 30px;
-  font-size: 32px; /* bigger for visibility */
+  margin-bottom: 20px;
+  font-size: 28px;
   text-align: center;
   color: #222;
 }
 
-.form-group {
-  margin-bottom: 15px;
+h2 {
+  margin-top: 30px;
+  font-size: 18px;
 }
 
 label {
@@ -40,6 +41,9 @@ select, input {
   padding: 8px;
   font-size: 16px;
   margin-bottom: 15px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
 }
 
 button {
@@ -57,11 +61,6 @@ button:hover {
   background-color: #0056b3;
 }
 
-h2 {
-  margin-top: 30px;
-  font-size: 18px;
-}
-
 #wifiConfirmation, #confirmation {
   color: green;
   font-weight: bold;
@@ -71,4 +70,34 @@ h2 {
 #status {
   font-style: italic;
   margin-top: 10px;
+}
+
+/* Section styling */
+.wifi-section, .live-section, .control-section {
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 20px;
+  background-color: #f9f9f9;
+}
+
+/* Responsive adjustments for small screens */
+@media screen and (max-width: 480px) {
+  .container {
+    padding: 20px 15px;
+  }
+
+  h1 {
+    font-size: 24px;
+    margin-bottom: 15px;
+  }
+
+  h2 {
+    font-size: 16px;
+  }
+
+  button, select, input {
+    font-size: 14px;
+    padding: 8px;
+  }
 }
