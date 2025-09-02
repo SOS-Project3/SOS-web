@@ -1,10 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SOS BBQ Monitor</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f8f9fa; color: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+    .container { background: white; padding: 30px 40px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+    h1 { text-align: center; margin-bottom: 20px; }
+    h2 { margin-top: 20px; font-size: 18px; }
+    label { display: block; margin-top: 10px; font-weight: bold; }
+    input, select, button { width: 100%; padding: 8px; margin-top: 5px; font-size: 16px; }
+    button { background-color: #007bff; color: white; border: none; cursor: pointer; margin-top: 15px; }
+    button:hover { background-color: #0056b3; }
+    .hidden { display: none; }
+    .live-section p { margin: 5px 0; }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -12,26 +23,28 @@
 
     <!-- WiFi Section -->
     <div class="wifi-section">
-      <h2>WiFi Settings</h2>
+      <h2>Connection</h2>
       <label for="wifiName">WiFi Name (SSID):</label>
-      <input type="text" id="wifiName" placeholder="Enter WiFi name" />
+      <input type="text" id="wifiName" placeholder="Enter WiFi name">
 
       <label for="wifiPassword">Password:</label>
-      <input type="password" id="wifiPassword" placeholder="Enter WiFi password" />
+      <input type="password" id="wifiPassword" placeholder="Enter WiFi password">
 
       <button id="wifiBtn">Submit WiFi</button>
       <p id="wifiConfirmation" class="hidden">✅ WiFi data sent!</p>
     </div>
 
+    <!-- Live Data Section -->
     <div class="live-section">
       <h2>Live Data</h2>
-      <p><strong>Temperature:</strong> <span id="temp">--</span> °C</p>
-      <p><strong>Status:</strong> <span id="status">--</span></p>
+      <p><strong>Temperature:</strong> <span id="liveTemperature">--</span></p>
+      <p><strong>Status:</strong> <span id="liveStatus">--</span></p>
+      <p><strong>ESP Connection:</strong> <span id="espConnection">--</span></p>
     </div>
 
+    <!-- Meat/Doneness Section -->
     <div class="control-section">
       <h2>Set Preferences</h2>
-      
       <label for="meatSelect">Meat Type:</label>
       <select id="meatSelect">
         <option value="" disabled selected>Select meat</option>
@@ -67,7 +80,7 @@
     </div>
   </div>
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -85,49 +98,15 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Firebase references
-    const tempRef = ref(db, "sos/temperature");
-    const statusRef = ref(db, "sos/status");
-    const espPingRef = ref(db, "sos/esp_status/last_ping");
-
-    // Update UI live from Firebase
-    onValue(tempRef, (snapshot) => {
-      document.getElementById("temp").textContent = snapshot.val() ?? "--";
-    });
-
-    onValue(statusRef, (snapshot) => {
-      document.getElementById("status").textContent = snapshot.val() ?? "--";
-    });
-
-    const espStatusElement = document.createElement("p");
-    espStatusElement.style.fontWeight = "bold";
-    espStatusElement.style.marginTop = "10px";
-    document.querySelector(".live-section").appendChild(espStatusElement);
-
-    onValue(espPingRef, (snapshot) => {
-      const lastPing = snapshot.val();
-      if (!lastPing) {
-        espStatusElement.textContent = "ESP is disconnected ⚠";
-        espStatusElement.style.color = "red";
-        return;
-      }
-      const now = Date.now();
-      const pingTime = new Date(lastPing).getTime();
-      const diffSeconds = (now - pingTime) / 1000;
-
-      if (diffSeconds < 20) {
-        espStatusElement.textContent = "ESP is connected ✅";
-        espStatusElement.style.color = "green";
-      } else {
-        espStatusElement.textContent = "ESP is disconnected ⚠";
-        espStatusElement.style.color = "red";
-      }
-    });
-
+    // Elements
     const meatSelect = document.getElementById("meatSelect");
     const donenessSelect = document.getElementById("donenessSelect");
     const donenessNote = document.getElementById("donenessNote");
+    const confirmation = document.getElementById("confirmation");
+    const wifiBtn = document.getElementById("wifiBtn");
+    const wifiConfirmation = document.getElementById("wifiConfirmation");
 
+    // --- MEAT DONENESS LOGIC ---
     function updateDonenessForMeat() {
       const meat = meatSelect.value;
       if (meat === "Chicken") {
@@ -137,65 +116,53 @@
       } else {
         donenessSelect.disabled = false;
         donenessNote.classList.add("hidden");
-        if (donenessSelect.value === "Well Done") {
-          donenessSelect.value = "";
-        }
+        if (donenessSelect.value === "Well Done") donenessSelect.value = "";
       }
     }
-
     meatSelect.addEventListener("change", updateDonenessForMeat);
     updateDonenessForMeat();
 
-    // Submit Meat/Doneness
+    // --- Submit Meat/Doneness ---
     document.getElementById("sendBtn").addEventListener("click", () => {
       const meat = meatSelect.value;
       const doneness = donenessSelect.value;
-
-      if (!meat || !doneness) {
-        alert("Please select both meat type and doneness.");
-        return;
-      }
-
-      set(ref(db, "settings/meat"), {
-        type: meat,
-        doneness: doneness,
-      }).then(() => {
-        const confirmText = document.getElementById("confirmation");
-        confirmText.classList.remove("hidden");
-        confirmText.textContent = `✅ Sent: ${meat} - ${doneness}`;
-
-        setTimeout(() => {
-          confirmText.classList.add("hidden");
-        }, 3000);
-      }).catch((error) => {
-        alert("Error sending data: " + error.message);
-      });
+      if (!meat || !doneness) { alert("Please select both meat and doneness."); return; }
+      set(ref(db, "SOS/settings/meat"), { type: meat, doneness: doneness })
+        .then(() => {
+          confirmation.classList.remove("hidden");
+          confirmation.textContent = `✅ Sent: ${meat} - ${doneness}`;
+          setTimeout(() => confirmation.classList.add("hidden"), 3000);
+        })
+        .catch(err => alert("Error: " + err.message));
     });
 
-    // Submit WiFi
-    document.getElementById("wifiBtn").addEventListener("click", () => {
+    // --- Submit WiFi ---
+    wifiBtn.addEventListener("click", () => {
       const wifiName = document.getElementById("wifiName").value;
       const wifiPassword = document.getElementById("wifiPassword").value;
+      if (!wifiName || !wifiPassword) { alert("Enter both WiFi name and password."); return; }
+      set(ref(db, "SOS/settings/wifi"), { name: wifiName, password: wifiPassword })
+        .then(() => {
+          wifiConfirmation.classList.remove("hidden");
+          wifiConfirmation.textContent = `✅ WiFi Saved: ${wifiName}`;
+          setTimeout(() => wifiConfirmation.classList.add("hidden"), 3000);
+        })
+        .catch(err => alert("Error: " + err.message));
+    });
 
-      if (!wifiName || !wifiPassword) {
-        alert("Please enter both WiFi name and password.");
-        return;
-      }
+    // --- LIVE DATA LISTENERS ---
+    const tempRef = ref(db, "SOS/liveData/temperature");
+    const statusRef = ref(db, "SOS/liveData/status");
+    const connRef = ref(db, "SOS/liveData/espConnection");
 
-      set(ref(db, "settings/wifi"), {
-        name: wifiName,
-        password: wifiPassword,
-      }).then(() => {
-        const confirmText = document.getElementById("wifiConfirmation");
-        confirmText.classList.remove("hidden");
-        confirmText.textContent = `✅ WiFi Saved: ${wifiName}`;
-
-        setTimeout(() => {
-          confirmText.classList.add("hidden");
-        }, 3000);
-      }).catch((error) => {
-        alert("Error sending WiFi: " + error.message);
-      });
+    onValue(tempRef, snapshot => {
+      document.getElementById("liveTemperature").textContent = snapshot.exists() ? snapshot.val() + " °C" : "--";
+    });
+    onValue(statusRef, snapshot => {
+      document.getElementById("liveStatus").textContent = snapshot.exists() ? snapshot.val() : "--";
+    });
+    onValue(connRef, snapshot => {
+      document.getElementById("espConnection").textContent = snapshot.exists() ? snapshot.val() : "Disconnected";
     });
   </script>
 </body>
