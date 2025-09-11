@@ -10,7 +10,7 @@
     h1 { text-align: center; margin-bottom: 20px; }
     h2 { margin-top: 20px; font-size: 18px; }
     label { display: block; margin-top: 10px; font-weight: bold; }
-    input, select, button { width: 100%; padding: 8px; margin-top: 5px; font-size: 16px; }
+    select, button { width: 100%; padding: 8px; margin-top: 5px; font-size: 16px; }
     button { background-color: #007bff; color: white; border: none; cursor: pointer; margin-top: 15px; }
     button:hover { background-color: #0056b3; }
     .hidden { display: none; }
@@ -20,19 +20,6 @@
 <body>
   <div class="container">
     <h1>SOS BBQ Monitor</h1>
-
-    <!-- WiFi Section -->
-    <div class="wifi-section">
-      <h2>Connection</h2>
-      <label for="wifiName">WiFi Name (SSID):</label>
-      <input type="text" id="wifiName" placeholder="Enter WiFi name">
-
-      <label for="wifiPassword">Password:</label>
-      <input type="password" id="wifiPassword" placeholder="Enter WiFi password">
-
-      <button id="wifiBtn">Submit WiFi</button>
-      <p id="wifiConfirmation" class="hidden">✅ WiFi data sent!</p>
-    </div>
 
     <!-- Live Data Section -->
     <div class="live-section">
@@ -98,13 +85,10 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Elements
     const meatSelect = document.getElementById("meatSelect");
     const donenessSelect = document.getElementById("donenessSelect");
     const donenessNote = document.getElementById("donenessNote");
     const confirmation = document.getElementById("confirmation");
-    const wifiBtn = document.getElementById("wifiBtn");
-    const wifiConfirmation = document.getElementById("wifiConfirmation");
 
     // --- MEAT DONENESS LOGIC ---
     function updateDonenessForMeat() {
@@ -132,20 +116,6 @@
           confirmation.classList.remove("hidden");
           confirmation.textContent = `✅ Sent: ${meat} - ${doneness}`;
           setTimeout(() => confirmation.classList.add("hidden"), 3000);
-        })
-        .catch(err => alert("Error: " + err.message));
-    });
-
-    // --- Submit WiFi ---
-    wifiBtn.addEventListener("click", () => {
-      const wifiName = document.getElementById("wifiName").value;
-      const wifiPassword = document.getElementById("wifiPassword").value;
-      if (!wifiName || !wifiPassword) { alert("Enter both WiFi name and password."); return; }
-      set(ref(db, "SOS/settings/wifi"), { name: wifiName, password: wifiPassword })
-        .then(() => {
-          wifiConfirmation.classList.remove("hidden");
-          wifiConfirmation.textContent = `✅ WiFi Saved: ${wifiName}`;
-          setTimeout(() => wifiConfirmation.classList.add("hidden"), 3000);
         })
         .catch(err => alert("Error: " + err.message));
     });
