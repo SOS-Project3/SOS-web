@@ -27,6 +27,7 @@
       <p><strong>Temperature:</strong> <span id="liveTemperature">--</span></p>
       <p><strong>Status:</strong> <span id="liveStatus">--</span></p>
       <p><strong>ESP Connection:</strong> <span id="espConnection">--</span></p>
+      <p><strong>WiFi Speed (ms):</strong> <span id="wifiSpeed">--</span></p>
     </div>
 
     <!-- Meat/Doneness Section -->
@@ -124,6 +125,7 @@
     const tempRef = ref(db, "SOS/liveData/temperature");
     const statusRef = ref(db, "SOS/liveData/status");
     const connRef = ref(db, "SOS/liveData/espConnection");
+    const wifiRef = ref(db, "SOS/liveData/wifiSpeed");
 
     onValue(tempRef, snapshot => {
       document.getElementById("liveTemperature").textContent = snapshot.exists() ? snapshot.val() + " °C" : "--";
@@ -133,6 +135,9 @@
     });
     onValue(connRef, snapshot => {
       document.getElementById("espConnection").textContent = snapshot.exists() ? snapshot.val() : "Disconnected";
+    });
+    onValue(wifiRef, snapshot => {
+      document.getElementById("wifiSpeed").textContent = snapshot.exists() ? snapshot.val() + " ms" : "--";
     });
   </script>
 </body>
