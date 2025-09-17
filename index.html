@@ -15,7 +15,7 @@
       <h2>Enter Device ID</h2>
       <input type="text" id="deviceIDInput" placeholder="Type device ID here" />
       <button id="setDeviceBtn">Set Device</button>
-      <p id="deviceConfirmation" class="hidden" style="color: green; margin-top: 5px;">Device ID set!</p>
+      <p id="deviceConfirmation" class="hidden" style="color: green; margin-top: 5px;"></p>
     </div>
 
     <div class="live-section">
@@ -29,7 +29,7 @@
     <div class="control-section">
       <h2>Set Preferences</h2>
       <label for="meatSelect">Meat Type:</label>
-      <select id="meatSelect">
+      <select id="meatSelect" disabled>
         <option value="" disabled selected>Select meat</option>
         <option value="Chicken">Chicken</option>
         <option value="Tri tip">Tri tip</option>
@@ -46,7 +46,7 @@
       </select>
 
       <label for="donenessSelect">Doneness:</label>
-      <select id="donenessSelect">
+      <select id="donenessSelect" disabled>
         <option value="" disabled selected>Select doneness</option>
         <option value="Rare">Rare</option>
         <option value="Medium Rare">Medium Rare</option>
@@ -58,7 +58,7 @@
         Chicken is always cooked Well Done.
       </p>
 
-      <button id="sendBtn">Submit</button>
+      <button id="sendBtn" disabled>Submit</button>
       <p id="confirmation" class="hidden">✅ Selection sent!</p>
     </div>
   </div>
@@ -66,7 +66,7 @@
   <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCXDxynz9AKrexXIUmvza8xnPA2HriiePQ",
@@ -85,16 +85,19 @@
     const deviceInput = document.getElementById("deviceIDInput");
     const setDeviceBtn = document.getElementById("setDeviceBtn");
     const deviceConfirmation = document.getElementById("deviceConfirmation");
-    let currentDeviceID = null;
 
     const meatSelect = document.getElementById("meatSelect");
     const donenessSelect = document.getElementById("donenessSelect");
     const donenessNote = document.getElementById("donenessNote");
+    const sendBtn = document.getElementById("sendBtn");
 
     const tempSpan = document.getElementById("temp");
     const statusSpan = document.getElementById("status");
     const connectionSpan = document.getElementById("connection");
     const wifiSpeedSpan = document.getElementById("wifiSpeed");
+
+    let currentDeviceID = null;
+    let meatRef, donenessRef, tempRef, statusRef, connectionRef, wifiSpeedRef;
 
     // Update doneness if chicken is selected
     function updateDonenessForMeat() {
@@ -113,22 +116,32 @@
     meatSelect.addEventListener("change", updateDonenessForMeat);
     updateDonenessForMeat();
 
-    // Handle setting device ID
+    // Handle setting device ID with validation
     setDeviceBtn.addEventListener("click", () => {
       const id = deviceInput.value.trim();
-      if (!id) {
-        alert("Please enter a device ID.");
-        return;
-      }
-      currentDeviceID = id;
-      deviceConfirmation.classList.remove("hidden");
-      deviceConfirmation.textContent = `Device ID set to: ${currentDeviceID}`;
+      if (!id) { alert("Please enter a device ID."); return; }
 
-      // Setup Firebase references for this device
-      setupDeviceRefs(currentDeviceID);
+      const deviceRef = ref(db, `devices/${id}`);
+      get(deviceRef).then(snapshot => {
+        if (snapshot.exists()) {
+          currentDeviceID = id;
+          deviceConfirmation.classList.remove("hidden");
+          deviceConfirmation.textContent = `Device ID set to: ${currentDeviceID}`;
+
+          // Enable controls
+          meatSelect.disabled = false;
+          donenessSelect.disabled = false;
+          sendBtn.disabled = false;
+
+          // Setup Firebase references for this device
+          setupDeviceRefs(currentDeviceID);
+        } else {
+          alert("Device ID not found in Firebase. Please check and try again.");
+        }
+      }).catch(error => {
+        alert("Error checking device ID: " + error.message);
+      });
     });
-
-    let meatRef, donenessRef, tempRef, statusRef, connectionRef, wifiSpeedRef;
 
     function setupDeviceRefs(deviceID) {
       meatRef = ref(db, `devices/${deviceID}/settings/meatType`);
@@ -151,7 +164,7 @@
     }
 
     // Handle submitting meat/doneness
-    document.getElementById("sendBtn").addEventListener("click", () => {
+    sendBtn.addEventListener("click", () => {
       if (!currentDeviceID) {
         alert("Please set the device ID first.");
         return;
