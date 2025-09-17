@@ -1,36 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SOS BBQ Monitor</title>
-  <style>
-    body { font-family: Arial, sans-serif; background-color: #f8f9fa; color: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-    .container { background: white; padding: 30px 40px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
-    h1 { text-align: center; margin-bottom: 20px; }
-    h2 { margin-top: 20px; font-size: 18px; }
-    label { display: block; margin-top: 10px; font-weight: bold; }
-    select, button { width: 100%; padding: 8px; margin-top: 5px; font-size: 16px; }
-    button { background-color: #007bff; color: white; border: none; cursor: pointer; margin-top: 15px; }
-    button:hover { background-color: #0056b3; }
-    .hidden { display: none; }
-    .live-section p { margin: 5px 0; }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
     <h1>SOS BBQ Monitor</h1>
 
-    <!-- Live Data Section -->
-    <div class="live-section">
-      <h2>Live Data</h2>
-      <p><strong>Temperature:</strong> <span id="liveTemperature">--</span></p>
-      <p><strong>Status:</strong> <span id="liveStatus">--</span></p>
-      <p><strong>ESP Connection:</strong> <span id="espConnection">--</span></p>
-      <p><strong>WiFi Speed (ms):</strong> <span id="wifiSpeed">--</span></p>
+    <!-- Device ID section -->
+    <div class="device-section">
+      <h2>Enter Device ID</h2>
+      <input type="text" id="deviceIDInput" placeholder="Type device ID here" />
+      <button id="setDeviceBtn">Set Device</button>
+      <p id="deviceConfirmation" class="hidden" style="color: green; margin-top: 5px;">Device ID set!</p>
     </div>
 
-    <!-- Meat/Doneness Section -->
+    <div class="live-section">
+      <h2>Live Data</h2>
+      <p><strong>Temperature:</strong> <span id="temp">--</span> °C</p>
+      <p><strong>Status:</strong> <span id="status">--</span></p>
+      <p><strong>ESP Connection:</strong> <span id="connection">--</span></p>
+      <p><strong>WiFi Speed:</strong> <span id="wifiSpeed">--</span> ms</p>
+    </div>
+
     <div class="control-section">
       <h2>Set Preferences</h2>
       <label for="meatSelect">Meat Type:</label>
@@ -63,12 +58,12 @@
         Chicken is always cooked Well Done.
       </p>
 
-      <button id="sendBtn">Submit Meat</button>
+      <button id="sendBtn">Submit</button>
       <p id="confirmation" class="hidden">✅ Selection sent!</p>
     </div>
   </div>
 
-  <!-- Firebase SDK -->
+  <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -86,12 +81,22 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    // DOM elements
+    const deviceInput = document.getElementById("deviceIDInput");
+    const setDeviceBtn = document.getElementById("setDeviceBtn");
+    const deviceConfirmation = document.getElementById("deviceConfirmation");
+    let currentDeviceID = null;
+
     const meatSelect = document.getElementById("meatSelect");
     const donenessSelect = document.getElementById("donenessSelect");
     const donenessNote = document.getElementById("donenessNote");
-    const confirmation = document.getElementById("confirmation");
 
-    // --- MEAT DONENESS LOGIC ---
+    const tempSpan = document.getElementById("temp");
+    const statusSpan = document.getElementById("status");
+    const connectionSpan = document.getElementById("connection");
+    const wifiSpeedSpan = document.getElementById("wifiSpeed");
+
+    // Update doneness if chicken is selected
     function updateDonenessForMeat() {
       const meat = meatSelect.value;
       if (meat === "Chicken") {
@@ -104,40 +109,69 @@
         if (donenessSelect.value === "Well Done") donenessSelect.value = "";
       }
     }
+
     meatSelect.addEventListener("change", updateDonenessForMeat);
     updateDonenessForMeat();
 
-    // --- Submit Meat/Doneness ---
+    // Handle setting device ID
+    setDeviceBtn.addEventListener("click", () => {
+      const id = deviceInput.value.trim();
+      if (!id) {
+        alert("Please enter a device ID.");
+        return;
+      }
+      currentDeviceID = id;
+      deviceConfirmation.classList.remove("hidden");
+      deviceConfirmation.textContent = `Device ID set to: ${currentDeviceID}`;
+
+      // Setup Firebase references for this device
+      setupDeviceRefs(currentDeviceID);
+    });
+
+    let meatRef, donenessRef, tempRef, statusRef, connectionRef, wifiSpeedRef;
+
+    function setupDeviceRefs(deviceID) {
+      meatRef = ref(db, `devices/${deviceID}/settings/meatType`);
+      donenessRef = ref(db, `devices/${deviceID}/settings/doneness`);
+
+      tempRef = ref(db, `devices/${deviceID}/liveData/temperature`);
+      statusRef = ref(db, `devices/${deviceID}/liveData/status`);
+      connectionRef = ref(db, `devices/${deviceID}/liveData/isConnected`);
+      wifiSpeedRef = ref(db, `devices/${deviceID}/liveData/wifiSpeed`);
+
+      // Listen for liveData updates
+      onValue(tempRef, (snap) => { tempSpan.textContent = snap.val() ?? "--"; });
+      onValue(statusRef, (snap) => { statusSpan.textContent = snap.val() ?? "--"; });
+      onValue(connectionRef, (snap) => { connectionSpan.textContent = snap.val() ? "Connected ✅" : "Disconnected ⚠"; });
+      onValue(wifiSpeedRef, (snap) => { wifiSpeedSpan.textContent = snap.val() ?? "--"; });
+
+      // Listen for settings updates
+      onValue(meatRef, (snap) => { if (snap.val()) { meatSelect.value = snap.val(); updateDonenessForMeat(); } });
+      onValue(donenessRef, (snap) => { if (snap.val()) { if (meatSelect.value !== "Chicken") donenessSelect.value = snap.val(); } });
+    }
+
+    // Handle submitting meat/doneness
     document.getElementById("sendBtn").addEventListener("click", () => {
+      if (!currentDeviceID) {
+        alert("Please set the device ID first.");
+        return;
+      }
       const meat = meatSelect.value;
       const doneness = donenessSelect.value;
-      if (!meat || !doneness) { alert("Please select both meat and doneness."); return; }
-      set(ref(db, "SOS/settings/meat"), { type: meat, doneness: doneness })
-        .then(() => {
-          confirmation.classList.remove("hidden");
-          confirmation.textContent = `✅ Sent: ${meat} - ${doneness}`;
-          setTimeout(() => confirmation.classList.add("hidden"), 3000);
-        })
-        .catch(err => alert("Error: " + err.message));
-    });
+      if (!meat || !doneness) {
+        alert("Please select both meat type and doneness.");
+        return;
+      }
 
-    // --- LIVE DATA LISTENERS ---
-    const tempRef = ref(db, "SOS/liveData/temperature");
-    const statusRef = ref(db, "SOS/liveData/status");
-    const connRef = ref(db, "SOS/liveData/espConnection");
-    const wifiRef = ref(db, "SOS/liveData/wifiSpeed");
-
-    onValue(tempRef, snapshot => {
-      document.getElementById("liveTemperature").textContent = snapshot.exists() ? snapshot.val() + " °C" : "--";
-    });
-    onValue(statusRef, snapshot => {
-      document.getElementById("liveStatus").textContent = snapshot.exists() ? snapshot.val() : "--";
-    });
-    onValue(connRef, snapshot => {
-      document.getElementById("espConnection").textContent = snapshot.exists() ? snapshot.val() : "Disconnected";
-    });
-    onValue(wifiRef, snapshot => {
-      document.getElementById("wifiSpeed").textContent = snapshot.exists() ? snapshot.val() + " ms" : "--";
+      set(ref(db, `devices/${currentDeviceID}/settings`), {
+        meatType: meat,
+        doneness: doneness
+      }).then(() => {
+        const confirmText = document.getElementById("confirmation");
+        confirmText.classList.remove("hidden");
+        confirmText.textContent = `✅ Sent: ${meat} - ${doneness}`;
+        setTimeout(() => { confirmText.classList.add("hidden"); }, 3000);
+      }).catch((error) => { alert("Error sending data: " + error.message); });
     });
   </script>
 </body>
