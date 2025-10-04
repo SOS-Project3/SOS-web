@@ -18,6 +18,7 @@
       <p id="deviceConfirmation" class="hidden" style="color: green; margin-top: 5px;"></p>
     </div>
 
+    <!-- Live Data -->
     <div class="live-section">
       <h2>Live Data</h2>
       <p><strong>Temperature:</strong> <span id="temp">--</span> °C</p>
@@ -26,8 +27,10 @@
       <p><strong>WiFi Speed:</strong> <span id="wifiSpeed">--</span> ms</p>
     </div>
 
+    <!-- Control Section -->
     <div class="control-section">
       <h2>Set Preferences</h2>
+
       <label for="meatSelect">Meat Type:</label>
       <select id="meatSelect" disabled>
         <option value="" disabled selected>Select meat</option>
@@ -58,15 +61,20 @@
         Chicken is always cooked Well Done.
       </p>
 
-      <button id="sendBtn" disabled>Submit</button>
-      <p id="confirmation" class="hidden">✅ Selection sent!</p>
+      <!-- Start/Stop Buttons -->
+      <div class="buttons">
+        <button id="startBtn" disabled>Start</button>
+        <button id="stopBtn" disabled>Stop</button>
+      </div>
+
+      <p id="confirmation" class="hidden">✅ Action sent!</p>
     </div>
   </div>
 
   <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, set, onValue, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCXDxynz9AKrexXIUmvza8xnPA2HriiePQ",
@@ -89,15 +97,16 @@
     const meatSelect = document.getElementById("meatSelect");
     const donenessSelect = document.getElementById("donenessSelect");
     const donenessNote = document.getElementById("donenessNote");
-    const sendBtn = document.getElementById("sendBtn");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
 
     const tempSpan = document.getElementById("temp");
     const statusSpan = document.getElementById("status");
     const connectionSpan = document.getElementById("connection");
     const wifiSpeedSpan = document.getElementById("wifiSpeed");
+    const confirmText = document.getElementById("confirmation");
 
     let currentDeviceID = null;
-    let meatRef, donenessRef, tempRef, statusRef, connectionRef, wifiSpeedRef;
 
     // Update doneness if chicken is selected
     function updateDonenessForMeat() {
@@ -116,7 +125,7 @@
     meatSelect.addEventListener("change", updateDonenessForMeat);
     updateDonenessForMeat();
 
-    // Handle setting device ID with validation
+    // Handle setting device ID
     setDeviceBtn.addEventListener("click", () => {
       const id = deviceInput.value.trim();
       if (!id) { alert("Please enter a device ID."); return; }
@@ -128,12 +137,11 @@
           deviceConfirmation.classList.remove("hidden");
           deviceConfirmation.textContent = `Device ID set to: ${currentDeviceID}`;
 
-          // Enable controls
           meatSelect.disabled = false;
           donenessSelect.disabled = false;
-          sendBtn.disabled = false;
+          startBtn.disabled = false;
+          stopBtn.disabled = false;
 
-          // Setup Firebase references for this device
           setupDeviceRefs(currentDeviceID);
         } else {
           alert("Device ID not found in Firebase. Please check and try again.");
@@ -144,48 +152,47 @@
     });
 
     function setupDeviceRefs(deviceID) {
-      meatRef = ref(db, `devices/${deviceID}/settings/meatType`);
-      donenessRef = ref(db, `devices/${deviceID}/settings/doneness`);
+      const tempRef = ref(db, `devices/${deviceID}/liveData/temperature`);
+      const statusRef = ref(db, `devices/${deviceID}/liveData/status`);
+      const connectionRef = ref(db, `devices/${deviceID}/liveData/isConnected`);
+      const wifiSpeedRef = ref(db, `devices/${deviceID}/liveData/wifiSpeed`);
 
-      tempRef = ref(db, `devices/${deviceID}/liveData/temperature`);
-      statusRef = ref(db, `devices/${deviceID}/liveData/status`);
-      connectionRef = ref(db, `devices/${deviceID}/liveData/isConnected`);
-      wifiSpeedRef = ref(db, `devices/${deviceID}/liveData/wifiSpeed`);
-
-      // Listen for liveData updates
       onValue(tempRef, (snap) => { tempSpan.textContent = snap.val() ?? "--"; });
       onValue(statusRef, (snap) => { statusSpan.textContent = snap.val() ?? "--"; });
       onValue(connectionRef, (snap) => { connectionSpan.textContent = snap.val() ? "Connected ✅" : "Disconnected ⚠"; });
       onValue(wifiSpeedRef, (snap) => { wifiSpeedSpan.textContent = snap.val() ?? "--"; });
-
-      // Listen for settings updates
-      onValue(meatRef, (snap) => { if (snap.val()) { meatSelect.value = snap.val(); updateDonenessForMeat(); } });
-      onValue(donenessRef, (snap) => { if (snap.val()) { if (meatSelect.value !== "Chicken") donenessSelect.value = snap.val(); } });
     }
 
-    // Handle submitting meat/doneness
-    sendBtn.addEventListener("click", () => {
-      if (!currentDeviceID) {
-        alert("Please set the device ID first.");
-        return;
-      }
+    // Start cooking
+    startBtn.addEventListener("click", () => {
+      if (!currentDeviceID) { alert("Set device ID first."); return; }
       const meat = meatSelect.value;
       const doneness = donenessSelect.value;
-      if (!meat || !doneness) {
-        alert("Please select both meat type and doneness.");
-        return;
-      }
+      if (!meat || !doneness) { alert("Select both meat type and doneness."); return; }
 
-      set(ref(db, `devices/${currentDeviceID}/settings`), {
+      update(ref(db, `devices/${currentDeviceID}/settings`), {
         meatType: meat,
-        doneness: doneness
+        doneness: doneness,
+        command: "start"
       }).then(() => {
-        const confirmText = document.getElementById("confirmation");
         confirmText.classList.remove("hidden");
-        confirmText.textContent = `✅ Sent: ${meat} - ${doneness}`;
+        confirmText.textContent = `🔥 Cooking started: ${meat} - ${doneness}`;
         setTimeout(() => { confirmText.classList.add("hidden"); }, 3000);
-      }).catch((error) => { alert("Error sending data: " + error.message); });
+      }).catch(err => alert("Error: " + err.message));
     });
+
+    // Stop cooking
+    stopBtn.addEventListener("click", () => {
+      if (!currentDeviceID) return;
+      update(ref(db, `devices/${currentDeviceID}/settings`), { command: "stop" })
+      .then(() => {
+        confirmText.classList.remove("hidden");
+        confirmText.textContent = "🛑 Cooking stopped.";
+        setTimeout(() => { confirmText.classList.add("hidden"); }, 3000);
+      })
+      .catch(err => alert("Error: " + err.message));
+    });
+
   </script>
 </body>
 </html>
