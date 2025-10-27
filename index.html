@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- ===== Hamburger menu ===== -->
+  <!-- Hamburger navigation -->
   <button id="menuToggle" class="hamburger">
     <span></span><span></span><span></span>
   </button>
@@ -21,21 +21,17 @@
     </ul>
   </nav>
 
-  <!-- ===== Page Container ===== -->
   <div class="container">
-
     <!-- Page 1 -->
     <section id="page1" class="page active">
       <h1>SOS BBQ MONITOR</h1>
-      <p><strong>SOS: Smart Oven & Skewer</strong> is a senior design project
-         that monitors and controls BBQ cooking using an ESP32 connected to Firebase.
-         You can view live temperature, connection data, and control your cooking settings from here.</p>
+      <p><strong>SOS: Smart Oven & Skewer</strong> — a senior design project that monitors and controls BBQ cooking using an ESP32 connected to Firebase.</p>
     </section>
 
     <!-- Page 2 -->
     <section id="page2" class="page hidden">
       <h2>Device ID</h2>
-      <input type="text" id="deviceIDInput" placeholder="Type device ID here" />
+      <input type="text" id="deviceIDInput" placeholder="Enter device ID" />
       <button id="setDeviceBtn">Set Device</button>
       <p id="deviceConfirmation" class="hidden success-text"></p>
     </section>
@@ -69,20 +65,22 @@
         <option value="Well Done">Well Done</option>
       </select>
 
+      <p id="donenessNote" class="hidden success-text">Chicken is always cooked Well Done.</p>
+
       <div class="buttons">
         <button id="startBtn" disabled>Start</button>
         <button id="stopBtn" disabled>Stop</button>
       </div>
+
       <p id="confirmation" class="hidden success-text"></p>
     </section>
-
   </div>
 
-  <!-- ===== Firebase + JS Logic ===== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getDatabase, ref, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
+    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCXDxynz9AKrexXIUmvza8xnPA2HriiePQ",
       authDomain: "sos-project-23171.firebaseapp.com",
@@ -96,11 +94,10 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // UI elements
+    // ======== Elements ========
     const menuBtn = document.getElementById("menuToggle");
     const sideMenu = document.getElementById("sideMenu");
     const links = sideMenu.querySelectorAll("a");
-
     const deviceInput = document.getElementById("deviceIDInput");
     const setDeviceBtn = document.getElementById("setDeviceBtn");
     const deviceConfirmation = document.getElementById("deviceConfirmation");
@@ -110,20 +107,17 @@
     const wifiSpeedSpan = document.getElementById("wifiSpeed");
     const meatSelect = document.getElementById("meatSelect");
     const donenessSelect = document.getElementById("donenessSelect");
+    const donenessNote = document.getElementById("donenessNote");
     const startBtn = document.getElementById("startBtn");
     const stopBtn = document.getElementById("stopBtn");
     const confirmText = document.getElementById("confirmation");
 
     let currentDeviceID = null;
 
-    // Hamburger toggle
-    menuBtn.addEventListener("click", () => {
-      sideMenu.classList.toggle("hidden");
-    });
-
-    // Navigation links
+    // ======== Navigation toggle ========
+    menuBtn.addEventListener("click", () => sideMenu.classList.toggle("hidden"));
     links.forEach(link => {
-      link.addEventListener("click", (e) => {
+      link.addEventListener("click", e => {
         e.preventDefault();
         const target = document.querySelector(link.getAttribute("href"));
         document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
@@ -132,16 +126,18 @@
       });
     });
 
-    // Device setup
+    // ======== Device setup ========
     setDeviceBtn.addEventListener("click", () => {
       const id = deviceInput.value.trim();
       if (!id) { alert("Enter a device ID"); return; }
+
       const deviceRef = ref(db, `devices/${id}`);
       get(deviceRef).then(snapshot => {
         if (snapshot.exists()) {
           currentDeviceID = id;
           deviceConfirmation.textContent = `Device set: ${id}`;
           deviceConfirmation.classList.remove("hidden");
+
           meatSelect.disabled = false;
           donenessSelect.disabled = false;
           startBtn.disabled = false;
@@ -153,7 +149,7 @@
       });
     });
 
-    // Firebase live data
+    // ======== Live Firebase data ========
     function setupDeviceRefs(deviceID) {
       onValue(ref(db, `devices/${deviceID}/liveData/temperature`), s => tempSpan.textContent = s.val() ?? "--");
       onValue(ref(db, `devices/${deviceID}/liveData/status`), s => statusSpan.textContent = s.val() ?? "--");
@@ -161,18 +157,35 @@
       onValue(ref(db, `devices/${deviceID}/liveData/wifiSpeed`), s => wifiSpeedSpan.textContent = s.val() ?? "--");
     }
 
-    // Start/Stop cooking
+    // ======== Enforce Chicken -> Well Done ========
+    meatSelect.addEventListener("change", () => {
+      if (meatSelect.value === "Chicken") {
+        donenessSelect.value = "Well Done";
+        donenessSelect.disabled = true;
+        donenessNote.classList.remove("hidden");
+      } else {
+        donenessSelect.disabled = false;
+        donenessNote.classList.add("hidden");
+        donenessSelect.value = "";
+      }
+    });
+
+    // ======== Start / Stop cooking ========
     startBtn.addEventListener("click", () => {
       if (!currentDeviceID) return;
       const meat = meatSelect.value;
       const doneness = donenessSelect.value;
       if (!meat || !doneness) { alert("Select meat and doneness"); return; }
-      update(ref(db, `devices/${currentDeviceID}/settings`), { meatType: meat, doneness, command: "start" })
-        .then(() => {
-          confirmText.textContent = `🔥 Started: ${meat} - ${doneness}`;
-          confirmText.classList.remove("hidden");
-          setTimeout(() => confirmText.classList.add("hidden"), 2000);
-        });
+
+      update(ref(db, `devices/${currentDeviceID}/settings`), {
+        meatType: meat,
+        doneness,
+        command: "start"
+      }).then(() => {
+        confirmText.textContent = `🔥 Started: ${meat} - ${doneness}`;
+        confirmText.classList.remove("hidden");
+        setTimeout(() => confirmText.classList.add("hidden"), 2000);
+      });
     });
 
     stopBtn.addEventListener("click", () => {
