@@ -1,171 +1,189 @@
-/* Smooth scrolling between anchors (if any) */
-html { scroll-behavior: smooth; }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SOS BBQ Monitor</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ===== Hamburger menu ===== -->
+  <button id="menuToggle" class="hamburger">
+    <span></span><span></span><span></span>
+  </button>
 
-body {
-  font-family: "Segoe UI", Arial, sans-serif;
-  background-color: #f0f2f5;
-  color: #333;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  margin: 0;
-  padding: 20px 0;
-}
-.no-scroll { overflow: hidden; }
+  <nav id="sideMenu" class="side-menu hidden">
+    <ul>
+      <li><a href="#page1">1) Project Description</a></li>
+      <li><a href="#page2">2) Device ID</a></li>
+      <li><a href="#page3">3) Live Data</a></li>
+      <li><a href="#page4">4) Set Preferences</a></li>
+    </ul>
+  </nav>
 
-.container {
-  background: #fff;
-  padding: 30px 25px;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  max-width: 480px;
-  box-sizing: border-box;
-  transition: all 0.3s ease-in-out;
-}
-.container:hover { box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15); }
+  <!-- ===== Page Container ===== -->
+  <div class="container">
 
-h1 {
-  margin-bottom: 12px;
-  font-size: 28px;
-  text-align: center;
-  color: #1a1a1a;
-}
-h2 {
-  margin-top: 18px;
-  font-size: 18px;
-  color: #333;
-  border-bottom: 2px solid #007bff;
-  display: inline-block;
-  padding-bottom: 3px;
-}
-label { display: block; margin-bottom: 6px; font-weight: 600; }
+    <!-- Page 1 -->
+    <section id="page1" class="page active">
+      <h1>SOS BBQ MONITOR</h1>
+      <p><strong>SOS: Smart Oven & Skewer</strong> is a senior design project
+         that monitors and controls BBQ cooking using an ESP32 connected to Firebase.
+         You can view live temperature, connection data, and control your cooking settings from here.</p>
+    </section>
 
-select, input {
-  width: 100%;
-  padding: 10px;
-  font-size: 16px;
-  margin-bottom: 15px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  box-sizing: border-box;
-  transition: 0.2s;
-}
-select:focus, input:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 5px rgba(0, 123, 255, 0.4);
-  outline: none;
-}
+    <!-- Page 2 -->
+    <section id="page2" class="page hidden">
+      <h2>Device ID</h2>
+      <input type="text" id="deviceIDInput" placeholder="Type device ID here" />
+      <button id="setDeviceBtn">Set Device</button>
+      <p id="deviceConfirmation" class="hidden success-text"></p>
+    </section>
 
-button {
-  padding: 10px 20px;
-  font-size: 16px;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-}
-button:hover { transform: scale(1.03); }
+    <!-- Page 3 -->
+    <section id="page3" class="page hidden">
+      <h2>Live Data</h2>
+      <p><strong>Temperature:</strong> <span id="temp">--</span> °C</p>
+      <p><strong>Status:</strong> <span id="status">--</span></p>
+      <p><strong>ESP Connection:</strong> <span id="connection">--</span></p>
+      <p><strong>WiFi Speed:</strong> <span id="wifiSpeed">--</span> ms</p>
+    </section>
 
-#setDeviceBtn {
-  background-color: #007bff;
-  display: block;
-  margin: 10px auto;
-  width: 70%;
-  max-width: 250px;
-  text-align: center;
-}
-#setDeviceBtn:hover { background-color: #0056b3; }
+    <!-- Page 4 -->
+    <section id="page4" class="page hidden">
+      <h2>Set Preferences</h2>
+      <label for="meatSelect">Meat Type:</label>
+      <select id="meatSelect" disabled>
+        <option value="" disabled selected>Select meat</option>
+        <option value="Chicken">Chicken</option>
+        <option value="Beef">Beef</option>
+        <option value="Lamb">Lamb</option>
+        <option value="Fish">Fish</option>
+      </select>
 
-#startBtn { background-color: #28a745; }
-#startBtn:hover { background-color: #218838; }
-#stopBtn { background-color: #dc3545; }
-#stopBtn:hover { background-color: #b02a37; }
+      <label for="donenessSelect">Doneness:</label>
+      <select id="donenessSelect" disabled>
+        <option value="" disabled selected>Select doneness</option>
+        <option value="Rare">Rare</option>
+        <option value="Medium">Medium</option>
+        <option value="Well Done">Well Done</option>
+      </select>
 
-.buttons {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 10px;
-}
+      <div class="buttons">
+        <button id="startBtn" disabled>Start</button>
+        <button id="stopBtn" disabled>Stop</button>
+      </div>
+      <p id="confirmation" class="hidden success-text"></p>
+    </section>
 
-.device-section, .live-section, .control-section, .project-section {
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 15px 20px;
-  margin-bottom: 20px;
-  background-color: #f9f9f9;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
-}
+  </div>
 
-.note {
-  color: #555;
-  font-size: 0.9em;
-  margin-top: 5px;
-  background-color: #f1f1f1;
-  border-radius: 5px;
-  padding: 5px;
-  text-align: center;
-}
-.alert {
-  background:#eef7ff; border:1px solid #cde2ff; color:#084298;
-  padding:8px 10px; border-radius:6px; margin-top:8px; text-align:center;
-}
+  <!-- ===== Firebase + JS Logic ===== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-.muted { color:#777; margin-left:6px; font-size:0.85em; }
-.hidden { display: none; }
+    const firebaseConfig = {
+      apiKey: "AIzaSyCXDxynz9AKrexXIUmvza8xnPA2HriiePQ",
+      authDomain: "sos-project-23171.firebaseapp.com",
+      databaseURL: "https://sos-project-23171-default-rtdb.firebaseio.com",
+      projectId: "sos-project-23171",
+      storageBucket: "sos-project-23171.firebasestorage.app",
+      messagingSenderId: "739080997565",
+      appId: "1:739080997565:web:8794ee9ba4f4f27de4c5d4"
+    };
 
-/* Hamburger + Drawer */
-.hamburger {
-  position: fixed;
-  top: 14px; left: 14px;
-  width: 42px; height: 42px;
-  background: #1f2937;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  z-index: 1001;
-}
-.hamburger span {
-  display: block;
-  width: 22px; height: 2px; background: #fff;
-  margin: 3px 0; border-radius: 2px;
-}
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-.nav-drawer {
-  position: fixed;
-  top: 0; left: 0;
-  width: 280px; max-width: 85vw;
-  height: 100vh;
-  background: #ffffff;
-  box-shadow: 2px 0 16px rgba(0,0,0,0.15);
-  transform: translateX(-100%);
-  transition: transform 0.25s ease;
-  padding: 18px 16px;
-  z-index: 1002;
-}
-.nav-drawer.open { transform: translateX(0); }
-.nav-title { margin: 6px 4px 12px; font-size: 16px; color:#111827; }
-.nav-drawer ul { list-style: none; padding: 0; margin: 0; }
-.nav-drawer li { margin: 8px 0; }
-.nav-link {
-  display:block; padding:10px 12px; border-radius:8px; text-decoration: none;
-  color:#111827; border:1px solid #e5e7eb; background:#f9fafb;
-}
-.nav-link:hover { background:#eef2ff; border-color:#c7d2fe; }
-.backdrop {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.35);
-  z-index: 1000;
-}
+    // UI elements
+    const menuBtn = document.getElementById("menuToggle");
+    const sideMenu = document.getElementById("sideMenu");
+    const links = sideMenu.querySelectorAll("a");
 
-/* Responsive */
-@media screen and (max-width: 480px) {
-  .container { padding: 20px 15px; }
-  h1 { font-size: 24px; margin-bottom: 15px; }
-  h2 { font-size: 16px; }
-  button, select, input { font-size: 14px; padding: 8px; }
-  .buttons { flex-direction: column; }
-  #setDeviceBtn { width: 80%; }
-}
+    const deviceInput = document.getElementById("deviceIDInput");
+    const setDeviceBtn = document.getElementById("setDeviceBtn");
+    const deviceConfirmation = document.getElementById("deviceConfirmation");
+    const tempSpan = document.getElementById("temp");
+    const statusSpan = document.getElementById("status");
+    const connectionSpan = document.getElementById("connection");
+    const wifiSpeedSpan = document.getElementById("wifiSpeed");
+    const meatSelect = document.getElementById("meatSelect");
+    const donenessSelect = document.getElementById("donenessSelect");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const confirmText = document.getElementById("confirmation");
+
+    let currentDeviceID = null;
+
+    // Hamburger toggle
+    menuBtn.addEventListener("click", () => {
+      sideMenu.classList.toggle("hidden");
+    });
+
+    // Navigation links
+    links.forEach(link => {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        const target = document.querySelector(link.getAttribute("href"));
+        document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
+        target.classList.remove("hidden");
+        sideMenu.classList.add("hidden");
+      });
+    });
+
+    // Device setup
+    setDeviceBtn.addEventListener("click", () => {
+      const id = deviceInput.value.trim();
+      if (!id) { alert("Enter a device ID"); return; }
+      const deviceRef = ref(db, `devices/${id}`);
+      get(deviceRef).then(snapshot => {
+        if (snapshot.exists()) {
+          currentDeviceID = id;
+          deviceConfirmation.textContent = `Device set: ${id}`;
+          deviceConfirmation.classList.remove("hidden");
+          meatSelect.disabled = false;
+          donenessSelect.disabled = false;
+          startBtn.disabled = false;
+          stopBtn.disabled = false;
+          setupDeviceRefs(id);
+        } else {
+          alert("Device not found in Firebase");
+        }
+      });
+    });
+
+    // Firebase live data
+    function setupDeviceRefs(deviceID) {
+      onValue(ref(db, `devices/${deviceID}/liveData/temperature`), s => tempSpan.textContent = s.val() ?? "--");
+      onValue(ref(db, `devices/${deviceID}/liveData/status`), s => statusSpan.textContent = s.val() ?? "--");
+      onValue(ref(db, `devices/${deviceID}/liveData/isConnected`), s => connectionSpan.textContent = s.val() ? "Connected ✅" : "Disconnected ⚠");
+      onValue(ref(db, `devices/${deviceID}/liveData/wifiSpeed`), s => wifiSpeedSpan.textContent = s.val() ?? "--");
+    }
+
+    // Start/Stop cooking
+    startBtn.addEventListener("click", () => {
+      if (!currentDeviceID) return;
+      const meat = meatSelect.value;
+      const doneness = donenessSelect.value;
+      if (!meat || !doneness) { alert("Select meat and doneness"); return; }
+      update(ref(db, `devices/${currentDeviceID}/settings`), { meatType: meat, doneness, command: "start" })
+        .then(() => {
+          confirmText.textContent = `🔥 Started: ${meat} - ${doneness}`;
+          confirmText.classList.remove("hidden");
+          setTimeout(() => confirmText.classList.add("hidden"), 2000);
+        });
+    });
+
+    stopBtn.addEventListener("click", () => {
+      if (!currentDeviceID) return;
+      update(ref(db, `devices/${currentDeviceID}/settings`), { command: "stop" })
+        .then(() => {
+          confirmText.textContent = "🛑 Stopped.";
+          confirmText.classList.remove("hidden");
+          setTimeout(() => confirmText.classList.add("hidden"), 2000);
+        });
+    });
+  </script>
+</body>
+</html>
