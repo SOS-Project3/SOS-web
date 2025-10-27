@@ -1,328 +1,171 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SOS BBQ Monitor</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <!-- Hamburger button -->
-  <button id="navToggle" class="hamburger" aria-label="Open navigation" aria-controls="navDrawer" aria-expanded="false">
-    <span></span><span></span><span></span>
-  </button>
+/* Smooth scrolling between anchors (if any) */
+html { scroll-behavior: smooth; }
 
-  <!-- Slide-in navigation drawer -->
-  <nav id="navDrawer" class="nav-drawer" aria-hidden="true">
-    <h3 class="nav-title">Navigate</h3>
-    <ul>
-      <li><a href="#section-project" class="nav-link">1) Project: Name & Description</a></li>
-      <li><a href="#section-device" class="nav-link">2) Device ID & Explanation</a></li>
-      <!-- IMPORTANT: clicking Live Data will first send preferences (if ready) -->
-      <li><a href="#section-live" class="nav-link" data-requires-send="true">3) Live Data (ESP32 → Web)</a></li>
-      <li><a href="#section-prefs" class="nav-link">4) Set Preferences</a></li>
-    </ul>
-  </nav>
-  <div id="backdrop" class="backdrop hidden" tabindex="-1" aria-hidden="true"></div>
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background-color: #f0f2f5;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  margin: 0;
+  padding: 20px 0;
+}
+.no-scroll { overflow: hidden; }
 
-  <div class="container">
-    <h1 id="section-project">SOS BBQ Monitor</h1>
+.container {
+  background: #fff;
+  padding: 30px 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 480px;
+  box-sizing: border-box;
+  transition: all 0.3s ease-in-out;
+}
+.container:hover { box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15); }
 
-    <div class="project-section">
-      <p class="muted"><strong>SOS: Smart Oven & Skewer</strong> — monitor and control BBQ cooking. Connects to an ESP32 via Firebase for live data and commands.</p>
-    </div>
+h1 {
+  margin-bottom: 12px;
+  font-size: 28px;
+  text-align: center;
+  color: #1a1a1a;
+}
+h2 {
+  margin-top: 18px;
+  font-size: 18px;
+  color: #333;
+  border-bottom: 2px solid #007bff;
+  display: inline-block;
+  padding-bottom: 3px;
+}
+label { display: block; margin-bottom: 6px; font-weight: 600; }
 
-    <!-- Device ID -->
-    <section id="section-device" class="device-section" aria-labelledby="device-id-title">
-      <h2 id="device-id-title">Enter Device ID</h2>
-      <input type="text" id="deviceIDInput" placeholder="Type device ID here" />
-      <button id="setDeviceBtn">Set Device</button>
-      <p id="deviceConfirmation" class="hidden alert"></p>
+select, input {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  margin-bottom: 15px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+  transition: 0.2s;
+}
+select:focus, input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.4);
+  outline: none;
+}
 
-      <div class="info-box">
-        <strong>What is the Device ID?</strong>
-        <p>It’s the unique identifier your ESP32 writes under <code>/devices/{deviceId}</code> in Firebase Realtime Database.</p>
-      </div>
-    </section>
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+button:hover { transform: scale(1.03); }
 
-    <!-- Live Data -->
-    <section id="section-live" class="live-section" aria-labelledby="live-data-title">
-      <h2 id="live-data-title">Live Data</h2>
-      <p><strong>Temperature:</strong> <span id="temp">--</span> °C <small id="tempAt" class="muted"></small></p>
-      <p><strong>Status:</strong> <span id="status">--</span> <small id="statusAt" class="muted"></small></p>
-      <p><strong>ESP Connection:</strong> <span id="connection">--</span> <small id="connAt" class="muted"></small></p>
-      <p><strong>WiFi Speed:</strong> <span id="wifiSpeed">--</span> ms <small id="wifiAt" class="muted"></small></p>
-    </section>
+#setDeviceBtn {
+  background-color: #007bff;
+  display: block;
+  margin: 10px auto;
+  width: 70%;
+  max-width: 250px;
+  text-align: center;
+}
+#setDeviceBtn:hover { background-color: #0056b3; }
 
-    <!-- Preferences -->
-    <section id="section-prefs" class="control-section" aria-labelledby="preferences-title">
-      <h2 id="preferences-title">Set Preferences</h2>
+#startBtn { background-color: #28a745; }
+#startBtn:hover { background-color: #218838; }
+#stopBtn { background-color: #dc3545; }
+#stopBtn:hover { background-color: #b02a37; }
 
-      <label for="meatSelect">Meat Type:</label>
-      <select id="meatSelect" disabled>
-        <option value="" disabled selected>Select meat</option>
-        <option value="Chicken">Chicken</option>
-        <option value="Tri tip">Tri tip</option>
-        <option value="Knuckle">Knuckle</option>
-        <option value="Flap">Flap</option>
-        <option value="Top round">Top round</option>
-        <option value="Top sirloin">Top sirloin</option>
-        <option value="Flank">Flank</option>
-        <option value="Sirloin cap">Sirloin cap</option>
-        <option value="Chuck / teres major">Chuck / teres major</option>
-        <option value="Steak cut / strip loin">Steak cut / strip loin</option>
-        <option value="Rib / ribeye">Rib / ribeye</option>
-        <option value="Flat iron">Flat iron</option>
-      </select>
+.buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
 
-      <label for="donenessSelect">Doneness:</label>
-      <select id="donenessSelect" disabled>
-        <option value="" disabled selected>Select doneness</option>
-        <option value="Rare">Rare</option>
-        <option value="Medium Rare">Medium Rare</option>
-        <option value="Medium">Medium</option>
-        <option value="Medium Well">Medium Well</option>
-        <option value="Well Done">Well Done</option>
-      </select>
+.device-section, .live-section, .control-section, .project-section {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin-bottom: 20px;
+  background-color: #f9f9f9;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+}
 
-      <p id="donenessNote" class="hidden note">Chicken is always cooked Well Done.</p>
+.note {
+  color: #555;
+  font-size: 0.9em;
+  margin-top: 5px;
+  background-color: #f1f1f1;
+  border-radius: 5px;
+  padding: 5px;
+  text-align: center;
+}
+.alert {
+  background:#eef7ff; border:1px solid #cde2ff; color:#084298;
+  padding:8px 10px; border-radius:6px; margin-top:8px; text-align:center;
+}
 
-      <div class="buttons">
-        <button id="startBtn" disabled>Start</button>
-        <button id="stopBtn" disabled>Stop</button>
-      </div>
+.muted { color:#777; margin-left:6px; font-size:0.85em; }
+.hidden { display: none; }
 
-      <p id="confirmation" class="hidden alert"></p>
-    </section>
-  </div>
+/* Hamburger + Drawer */
+.hamburger {
+  position: fixed;
+  top: 14px; left: 14px;
+  width: 42px; height: 42px;
+  background: #1f2937;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  z-index: 1001;
+}
+.hamburger span {
+  display: block;
+  width: 22px; height: 2px; background: #fff;
+  margin: 3px 0; border-radius: 2px;
+}
 
-  <!-- Firebase SDKs + App Logic -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, onValue, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+.nav-drawer {
+  position: fixed;
+  top: 0; left: 0;
+  width: 280px; max-width: 85vw;
+  height: 100vh;
+  background: #ffffff;
+  box-shadow: 2px 0 16px rgba(0,0,0,0.15);
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+  padding: 18px 16px;
+  z-index: 1002;
+}
+.nav-drawer.open { transform: translateX(0); }
+.nav-title { margin: 6px 4px 12px; font-size: 16px; color:#111827; }
+.nav-drawer ul { list-style: none; padding: 0; margin: 0; }
+.nav-drawer li { margin: 8px 0; }
+.nav-link {
+  display:block; padding:10px 12px; border-radius:8px; text-decoration: none;
+  color:#111827; border:1px solid #e5e7eb; background:#f9fafb;
+}
+.nav-link:hover { background:#eef2ff; border-color:#c7d2fe; }
+.backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+  z-index: 1000;
+}
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCXDxynz9AKrexXIUmvza8xnPA2HriiePQ",
-      authDomain: "sos-project-23171.firebaseapp.com",
-      databaseURL: "https://sos-project-23171-default-rtdb.firebaseio.com",
-      projectId: "sos-project-23171",
-      storageBucket: "sos-project-23171.firebasestorage.app",
-      messagingSenderId: "739080997565",
-      appId: "1:739080997565:web:8794ee9ba4f4f27de4c5d4"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    // ----- DOM
-    const deviceInput = document.getElementById("deviceIDInput");
-    const setDeviceBtn = document.getElementById("setDeviceBtn");
-    const deviceConfirmation = document.getElementById("deviceConfirmation");
-
-    const meatSelect = document.getElementById("meatSelect");
-    const donenessSelect = document.getElementById("donenessSelect");
-    const donenessNote = document.getElementById("donenessNote");
-    const startBtn = document.getElementById("startBtn");
-    const stopBtn = document.getElementById("stopBtn");
-
-    const tempSpan = document.getElementById("temp");
-    const statusSpan = document.getElementById("status");
-    const connectionSpan = document.getElementById("connection");
-    const wifiSpeedSpan = document.getElementById("wifiSpeed");
-    const confirmText = document.getElementById("confirmation");
-
-    const tempAt = document.getElementById("tempAt");
-    const statusAt = document.getElementById("statusAt");
-    const connAt = document.getElementById("connAt");
-    const wifiAt = document.getElementById("wifiAt");
-
-    const navToggle = document.getElementById("navToggle");
-    const navDrawer = document.getElementById("navDrawer");
-    const backdrop = document.getElementById("backdrop");
-    const navLinks = document.querySelectorAll(".nav-link");
-
-    // ----- State
-    let currentDeviceID = null;
-    const LS = {
-      device: "sos_device_id",
-      meat: "sos_meat",
-      doneness: "sos_doneness",
-    };
-
-    // ----- Helpers
-    function enableControls(enabled) {
-      meatSelect.disabled = !enabled;
-      donenessSelect.disabled = !enabled;
-      startBtn.disabled = !enabled;
-      stopBtn.disabled = !enabled;
-    }
-    function stamp(el) { if (el) el.textContent = `(updated ${new Date().toLocaleTimeString()})`; }
-
-    function updateDonenessForMeat() {
-      const meat = meatSelect.value;
-      if (meat === "Chicken") {
-        donenessSelect.value = "Well Done";
-        donenessSelect.disabled = true;
-        donenessNote.classList.remove("hidden");
-      } else {
-        donenessSelect.disabled = false;
-        donenessNote.classList.add("hidden");
-        if (donenessSelect.value === "Well Done") donenessSelect.value = "";
-      }
-    }
-
-    function saveSelections() {
-      localStorage.setItem(LS.meat, meatSelect.value || "");
-      localStorage.setItem(LS.doneness, donenessSelect.value || "");
-    }
-    function restoreSelections() {
-      const meat = localStorage.getItem(LS.meat) || "";
-      const done = localStorage.getItem(LS.doneness) || "";
-      if (meat) meatSelect.value = meat;
-      updateDonenessForMeat();
-      if (done) donenessSelect.value = done;
-    }
-
-    function setCurrentDevice(id) {
-      currentDeviceID = id;
-      deviceConfirmation.classList.remove("hidden");
-      deviceConfirmation.textContent = `Device ID set to: ${currentDeviceID}`;
-      localStorage.setItem(LS.device, currentDeviceID);
-      enableControls(true);
-      setupDeviceRefs(currentDeviceID);
-    }
-
-    async function sendPreferencesIfReady(showToast = true) {
-      const meat = meatSelect.value;
-      const doneness = donenessSelect.value;
-
-      // Only send if everything is ready
-      if (!currentDeviceID || !meat || !doneness) return false;
-
-      try {
-        await update(ref(db, `devices/${currentDeviceID}/settings`), {
-          meatType: meat,
-          doneness: doneness
-        });
-        if (showToast) {
-          confirmText.classList.remove("hidden");
-          confirmText.textContent = `✅ Preferences sent: ${meat} - ${doneness}`;
-          setTimeout(() => confirmText.classList.add("hidden"), 2000);
-        }
-        return true;
-      } catch (e) {
-        alert("Error sending preferences: " + e.message);
-        return false;
-      }
-    }
-
-    // ----- NAV drawer behavior
-    function openNav() {
-      navDrawer.classList.add("open");
-      backdrop.classList.remove("hidden");
-      navToggle.setAttribute("aria-expanded", "true");
-      navDrawer.setAttribute("aria-hidden", "false");
-      document.body.classList.add("no-scroll");
-    }
-    function closeNav() {
-      navDrawer.classList.remove("open");
-      backdrop.classList.add("hidden");
-      navToggle.setAttribute("aria-expanded", "false");
-      navDrawer.setAttribute("aria-hidden", "true");
-      document.body.classList.remove("no-scroll");
-    }
-    navToggle.addEventListener("click", () => {
-      if (navDrawer.classList.contains("open")) closeNav(); else openNav();
-    });
-    backdrop.addEventListener("click", closeNav);
-
-    // Intercept clicks to Live Data: send preferences first, then navigate
-    navLinks.forEach(a => {
-      a.addEventListener("click", async (e) => {
-        const targetHash = a.getAttribute("href") || "#";
-        const mustSend = a.dataset.requiresSend === "true";
-
-        // Close drawer immediately for UX
-        closeNav();
-
-        if (mustSend) {
-          e.preventDefault(); // hold navigation
-          await sendPreferencesIfReady(true);
-          // then navigate to the section
-          const el = document.querySelector(targetHash);
-          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-          else window.location.hash = targetHash;
-        }
-        // else allow normal anchor navigation
-      });
-    });
-
-    // ----- Doneness logic + persistence
-    meatSelect.addEventListener("change", () => { updateDonenessForMeat(); saveSelections(); });
-    donenessSelect.addEventListener("change", saveSelections);
-
-    // ----- Device set/restore
-    const savedDevice = localStorage.getItem(LS.device);
-    if (savedDevice) {
-      deviceInput.value = savedDevice;
-      const deviceRef = ref(db, `devices/${savedDevice}`);
-      get(deviceRef).then(snap => { if (snap.exists()) setCurrentDevice(savedDevice); });
-    }
-    restoreSelections();
-
-    setDeviceBtn.addEventListener("click", () => {
-      const id = deviceInput.value.trim();
-      if (!id) { alert("Please enter a device ID."); return; }
-      const deviceRef = ref(db, `devices/${id}`);
-      get(deviceRef).then(snapshot => {
-        if (snapshot.exists()) {
-          setCurrentDevice(id);
-        } else {
-          alert("Device ID not found in Firebase. Please check and try again.");
-        }
-      }).catch(error => {
-        alert("Error checking device ID: " + error.message);
-      });
-    });
-
-    // ----- Live subscriptions
-    function setupDeviceRefs(deviceID) {
-      const tempRef = ref(db, `devices/${deviceID}/liveData/temperature`);
-      const statusRef = ref(db, `devices/${deviceID}/liveData/status`);
-      const connectionRef = ref(db, `devices/${deviceID}/liveData/isConnected`);
-      const wifiSpeedRef = ref(db, `devices/${deviceID}/liveData/wifiSpeed`);
-
-      onValue(tempRef, (snap) => { tempSpan.textContent = snap.val() ?? "--"; stamp(tempAt); });
-      onValue(statusRef, (snap) => { statusSpan.textContent = snap.val() ?? "--"; stamp(statusAt); });
-      onValue(connectionRef, (snap) => { connectionSpan.textContent = snap.val() ? "Connected ✅" : "Disconnected ⚠"; stamp(connAt); });
-      onValue(wifiSpeedRef, (snap) => { wifiSpeedSpan.textContent = snap.val() ?? "--"; stamp(wifiAt); });
-    }
-
-    // ----- Start/Stop (also sends prefs on Start)
-    startBtn.addEventListener("click", async () => {
-      if (!currentDeviceID) { alert("Set device ID first."); return; }
-      if (!meatSelect.value || !donenessSelect.value) { alert("Select both meat type and doneness."); return; }
-
-      await sendPreferencesIfReady(false); // ensure prefs are up to date
-      update(ref(db, `devices/${currentDeviceID}/settings`), { command: "start" })
-        .then(() => {
-          confirmText.classList.remove("hidden");
-          confirmText.textContent = `🔥 Cooking started: ${meatSelect.value} - ${donenessSelect.value}`;
-          setTimeout(() => { confirmText.classList.add("hidden"); }, 3000);
-        })
-        .catch(err => alert("Error: " + err.message));
-    });
-
-    stopBtn.addEventListener("click", () => {
-      if (!currentDeviceID) return;
-      update(ref(db, `devices/${currentDeviceID}/settings`), { command: "stop" })
-        .then(() => {
-          confirmText.classList.remove("hidden");
-          confirmText.textContent = "🛑 Cooking stopped.";
-          setTimeout(() => { confirmText.classList.add("hidden"); }, 3000);
-        })
-        .catch(err => alert("Error: " + err.message));
-    });
-  </script>
-</body>
-</html>
+/* Responsive */
+@media screen and (max-width: 480px) {
+  .container { padding: 20px 15px; }
+  h1 { font-size: 24px; margin-bottom: 15px; }
+  h2 { font-size: 16px; }
+  button, select, input { font-size: 14px; padding: 8px; }
+  .buttons { flex-direction: column; }
+  #setDeviceBtn { width: 80%; }
+}
