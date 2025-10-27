@@ -7,29 +7,56 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>SOS BBQ Monitor</h1>
+  <!-- Hamburger button -->
+  <button id="navToggle" class="hamburger" aria-label="Open navigation" aria-controls="navDrawer" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
 
-    <!-- Device ID section -->
-    <div class="device-section">
-      <h2>Enter Device ID</h2>
+  <!-- Slide-in navigation drawer -->
+  <nav id="navDrawer" class="nav-drawer" aria-hidden="true">
+    <h3 class="nav-title">Navigate</h3>
+    <ul>
+      <li><a href="#section-project" class="nav-link">1) Project: Name & Description</a></li>
+      <li><a href="#section-device" class="nav-link">2) Device ID & Explanation</a></li>
+      <!-- IMPORTANT: clicking Live Data will first send preferences (if ready) -->
+      <li><a href="#section-live" class="nav-link" data-requires-send="true">3) Live Data (ESP32 → Web)</a></li>
+      <li><a href="#section-prefs" class="nav-link">4) Set Preferences</a></li>
+    </ul>
+  </nav>
+  <div id="backdrop" class="backdrop hidden" tabindex="-1" aria-hidden="true"></div>
+
+  <div class="container">
+    <h1 id="section-project">SOS BBQ Monitor</h1>
+
+    <div class="project-section">
+      <p class="muted"><strong>SOS: Smart Oven & Skewer</strong> — monitor and control BBQ cooking. Connects to an ESP32 via Firebase for live data and commands.</p>
+    </div>
+
+    <!-- Device ID -->
+    <section id="section-device" class="device-section" aria-labelledby="device-id-title">
+      <h2 id="device-id-title">Enter Device ID</h2>
       <input type="text" id="deviceIDInput" placeholder="Type device ID here" />
       <button id="setDeviceBtn">Set Device</button>
-      <p id="deviceConfirmation" class="hidden" style="color: green; margin-top: 5px;"></p>
-    </div>
+      <p id="deviceConfirmation" class="hidden alert"></p>
+
+      <div class="info-box">
+        <strong>What is the Device ID?</strong>
+        <p>It’s the unique identifier your ESP32 writes under <code>/devices/{deviceId}</code> in Firebase Realtime Database.</p>
+      </div>
+    </section>
 
     <!-- Live Data -->
-    <div class="live-section">
-      <h2>Live Data</h2>
-      <p><strong>Temperature:</strong> <span id="temp">--</span> °C</p>
-      <p><strong>Status:</strong> <span id="status">--</span></p>
-      <p><strong>ESP Connection:</strong> <span id="connection">--</span></p>
-      <p><strong>WiFi Speed:</strong> <span id="wifiSpeed">--</span> ms</p>
-    </div>
+    <section id="section-live" class="live-section" aria-labelledby="live-data-title">
+      <h2 id="live-data-title">Live Data</h2>
+      <p><strong>Temperature:</strong> <span id="temp">--</span> °C <small id="tempAt" class="muted"></small></p>
+      <p><strong>Status:</strong> <span id="status">--</span> <small id="statusAt" class="muted"></small></p>
+      <p><strong>ESP Connection:</strong> <span id="connection">--</span> <small id="connAt" class="muted"></small></p>
+      <p><strong>WiFi Speed:</strong> <span id="wifiSpeed">--</span> ms <small id="wifiAt" class="muted"></small></p>
+    </section>
 
-    <!-- Control Section -->
-    <div class="control-section">
-      <h2>Set Preferences</h2>
+    <!-- Preferences -->
+    <section id="section-prefs" class="control-section" aria-labelledby="preferences-title">
+      <h2 id="preferences-title">Set Preferences</h2>
 
       <label for="meatSelect">Meat Type:</label>
       <select id="meatSelect" disabled>
@@ -57,24 +84,22 @@
         <option value="Medium Well">Medium Well</option>
         <option value="Well Done">Well Done</option>
       </select>
-      <p id="donenessNote" class="hidden" style="color: #555; font-size: 0.9em; margin-top: 5px;">
-        Chicken is always cooked Well Done.
-      </p>
 
-      <!-- Start/Stop Buttons -->
+      <p id="donenessNote" class="hidden note">Chicken is always cooked Well Done.</p>
+
       <div class="buttons">
         <button id="startBtn" disabled>Start</button>
         <button id="stopBtn" disabled>Stop</button>
       </div>
 
-      <p id="confirmation" class="hidden">✅ Action sent!</p>
-    </div>
+      <p id="confirmation" class="hidden alert"></p>
+    </section>
   </div>
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase SDKs + App Logic -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, set, onValue, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, onValue, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCXDxynz9AKrexXIUmvza8xnPA2HriiePQ",
@@ -89,7 +114,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // DOM elements
+    // ----- DOM
     const deviceInput = document.getElementById("deviceIDInput");
     const setDeviceBtn = document.getElementById("setDeviceBtn");
     const deviceConfirmation = document.getElementById("deviceConfirmation");
@@ -106,9 +131,33 @@
     const wifiSpeedSpan = document.getElementById("wifiSpeed");
     const confirmText = document.getElementById("confirmation");
 
-    let currentDeviceID = null;
+    const tempAt = document.getElementById("tempAt");
+    const statusAt = document.getElementById("statusAt");
+    const connAt = document.getElementById("connAt");
+    const wifiAt = document.getElementById("wifiAt");
 
-    // Update doneness if chicken is selected
+    const navToggle = document.getElementById("navToggle");
+    const navDrawer = document.getElementById("navDrawer");
+    const backdrop = document.getElementById("backdrop");
+    const navLinks = document.querySelectorAll(".nav-link");
+
+    // ----- State
+    let currentDeviceID = null;
+    const LS = {
+      device: "sos_device_id",
+      meat: "sos_meat",
+      doneness: "sos_doneness",
+    };
+
+    // ----- Helpers
+    function enableControls(enabled) {
+      meatSelect.disabled = !enabled;
+      donenessSelect.disabled = !enabled;
+      startBtn.disabled = !enabled;
+      stopBtn.disabled = !enabled;
+    }
+    function stamp(el) { if (el) el.textContent = `(updated ${new Date().toLocaleTimeString()})`; }
+
     function updateDonenessForMeat() {
       const meat = meatSelect.value;
       if (meat === "Chicken") {
@@ -122,27 +171,112 @@
       }
     }
 
-    meatSelect.addEventListener("change", updateDonenessForMeat);
-    updateDonenessForMeat();
+    function saveSelections() {
+      localStorage.setItem(LS.meat, meatSelect.value || "");
+      localStorage.setItem(LS.doneness, donenessSelect.value || "");
+    }
+    function restoreSelections() {
+      const meat = localStorage.getItem(LS.meat) || "";
+      const done = localStorage.getItem(LS.doneness) || "";
+      if (meat) meatSelect.value = meat;
+      updateDonenessForMeat();
+      if (done) donenessSelect.value = done;
+    }
 
-    // Handle setting device ID
+    function setCurrentDevice(id) {
+      currentDeviceID = id;
+      deviceConfirmation.classList.remove("hidden");
+      deviceConfirmation.textContent = `Device ID set to: ${currentDeviceID}`;
+      localStorage.setItem(LS.device, currentDeviceID);
+      enableControls(true);
+      setupDeviceRefs(currentDeviceID);
+    }
+
+    async function sendPreferencesIfReady(showToast = true) {
+      const meat = meatSelect.value;
+      const doneness = donenessSelect.value;
+
+      // Only send if everything is ready
+      if (!currentDeviceID || !meat || !doneness) return false;
+
+      try {
+        await update(ref(db, `devices/${currentDeviceID}/settings`), {
+          meatType: meat,
+          doneness: doneness
+        });
+        if (showToast) {
+          confirmText.classList.remove("hidden");
+          confirmText.textContent = `✅ Preferences sent: ${meat} - ${doneness}`;
+          setTimeout(() => confirmText.classList.add("hidden"), 2000);
+        }
+        return true;
+      } catch (e) {
+        alert("Error sending preferences: " + e.message);
+        return false;
+      }
+    }
+
+    // ----- NAV drawer behavior
+    function openNav() {
+      navDrawer.classList.add("open");
+      backdrop.classList.remove("hidden");
+      navToggle.setAttribute("aria-expanded", "true");
+      navDrawer.setAttribute("aria-hidden", "false");
+      document.body.classList.add("no-scroll");
+    }
+    function closeNav() {
+      navDrawer.classList.remove("open");
+      backdrop.classList.add("hidden");
+      navToggle.setAttribute("aria-expanded", "false");
+      navDrawer.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("no-scroll");
+    }
+    navToggle.addEventListener("click", () => {
+      if (navDrawer.classList.contains("open")) closeNav(); else openNav();
+    });
+    backdrop.addEventListener("click", closeNav);
+
+    // Intercept clicks to Live Data: send preferences first, then navigate
+    navLinks.forEach(a => {
+      a.addEventListener("click", async (e) => {
+        const targetHash = a.getAttribute("href") || "#";
+        const mustSend = a.dataset.requiresSend === "true";
+
+        // Close drawer immediately for UX
+        closeNav();
+
+        if (mustSend) {
+          e.preventDefault(); // hold navigation
+          await sendPreferencesIfReady(true);
+          // then navigate to the section
+          const el = document.querySelector(targetHash);
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+          else window.location.hash = targetHash;
+        }
+        // else allow normal anchor navigation
+      });
+    });
+
+    // ----- Doneness logic + persistence
+    meatSelect.addEventListener("change", () => { updateDonenessForMeat(); saveSelections(); });
+    donenessSelect.addEventListener("change", saveSelections);
+
+    // ----- Device set/restore
+    const savedDevice = localStorage.getItem(LS.device);
+    if (savedDevice) {
+      deviceInput.value = savedDevice;
+      const deviceRef = ref(db, `devices/${savedDevice}`);
+      get(deviceRef).then(snap => { if (snap.exists()) setCurrentDevice(savedDevice); });
+    }
+    restoreSelections();
+
     setDeviceBtn.addEventListener("click", () => {
       const id = deviceInput.value.trim();
       if (!id) { alert("Please enter a device ID."); return; }
-
       const deviceRef = ref(db, `devices/${id}`);
       get(deviceRef).then(snapshot => {
         if (snapshot.exists()) {
-          currentDeviceID = id;
-          deviceConfirmation.classList.remove("hidden");
-          deviceConfirmation.textContent = `Device ID set to: ${currentDeviceID}`;
-
-          meatSelect.disabled = false;
-          donenessSelect.disabled = false;
-          startBtn.disabled = false;
-          stopBtn.disabled = false;
-
-          setupDeviceRefs(currentDeviceID);
+          setCurrentDevice(id);
         } else {
           alert("Device ID not found in Firebase. Please check and try again.");
         }
@@ -151,48 +285,44 @@
       });
     });
 
+    // ----- Live subscriptions
     function setupDeviceRefs(deviceID) {
       const tempRef = ref(db, `devices/${deviceID}/liveData/temperature`);
       const statusRef = ref(db, `devices/${deviceID}/liveData/status`);
       const connectionRef = ref(db, `devices/${deviceID}/liveData/isConnected`);
       const wifiSpeedRef = ref(db, `devices/${deviceID}/liveData/wifiSpeed`);
 
-      onValue(tempRef, (snap) => { tempSpan.textContent = snap.val() ?? "--"; });
-      onValue(statusRef, (snap) => { statusSpan.textContent = snap.val() ?? "--"; });
-      onValue(connectionRef, (snap) => { connectionSpan.textContent = snap.val() ? "Connected ✅" : "Disconnected ⚠"; });
-      onValue(wifiSpeedRef, (snap) => { wifiSpeedSpan.textContent = snap.val() ?? "--"; });
+      onValue(tempRef, (snap) => { tempSpan.textContent = snap.val() ?? "--"; stamp(tempAt); });
+      onValue(statusRef, (snap) => { statusSpan.textContent = snap.val() ?? "--"; stamp(statusAt); });
+      onValue(connectionRef, (snap) => { connectionSpan.textContent = snap.val() ? "Connected ✅" : "Disconnected ⚠"; stamp(connAt); });
+      onValue(wifiSpeedRef, (snap) => { wifiSpeedSpan.textContent = snap.val() ?? "--"; stamp(wifiAt); });
     }
 
-    // Start cooking
-    startBtn.addEventListener("click", () => {
+    // ----- Start/Stop (also sends prefs on Start)
+    startBtn.addEventListener("click", async () => {
       if (!currentDeviceID) { alert("Set device ID first."); return; }
-      const meat = meatSelect.value;
-      const doneness = donenessSelect.value;
-      if (!meat || !doneness) { alert("Select both meat type and doneness."); return; }
+      if (!meatSelect.value || !donenessSelect.value) { alert("Select both meat type and doneness."); return; }
 
-      update(ref(db, `devices/${currentDeviceID}/settings`), {
-        meatType: meat,
-        doneness: doneness,
-        command: "start"
-      }).then(() => {
-        confirmText.classList.remove("hidden");
-        confirmText.textContent = `🔥 Cooking started: ${meat} - ${doneness}`;
-        setTimeout(() => { confirmText.classList.add("hidden"); }, 3000);
-      }).catch(err => alert("Error: " + err.message));
+      await sendPreferencesIfReady(false); // ensure prefs are up to date
+      update(ref(db, `devices/${currentDeviceID}/settings`), { command: "start" })
+        .then(() => {
+          confirmText.classList.remove("hidden");
+          confirmText.textContent = `🔥 Cooking started: ${meatSelect.value} - ${donenessSelect.value}`;
+          setTimeout(() => { confirmText.classList.add("hidden"); }, 3000);
+        })
+        .catch(err => alert("Error: " + err.message));
     });
 
-    // Stop cooking
     stopBtn.addEventListener("click", () => {
       if (!currentDeviceID) return;
       update(ref(db, `devices/${currentDeviceID}/settings`), { command: "stop" })
-      .then(() => {
-        confirmText.classList.remove("hidden");
-        confirmText.textContent = "🛑 Cooking stopped.";
-        setTimeout(() => { confirmText.classList.add("hidden"); }, 3000);
-      })
-      .catch(err => alert("Error: " + err.message));
+        .then(() => {
+          confirmText.classList.remove("hidden");
+          confirmText.textContent = "🛑 Cooking stopped.";
+          setTimeout(() => { confirmText.classList.add("hidden"); }, 3000);
+        })
+        .catch(err => alert("Error: " + err.message));
     });
-
   </script>
 </body>
 </html>
