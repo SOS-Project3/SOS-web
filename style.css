@@ -1,179 +1,260 @@
-/* Smooth anchor scrolling */
-html { scroll-behavior: smooth; }
+// app.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-body {
-  font-family: "Segoe UI", Arial, sans-serif;
-  background-color: #f0f2f5;
-  color: #333;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  margin: 0;
-  padding: 20px 0;
-}
-.no-scroll { overflow: hidden; }
+/* -------- Firebase -------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyCXDxynz9AKrexXIUmvza8xnPA2HriiePQ",
+  authDomain: "sos-project-23171.firebaseapp.com",
+  databaseURL: "https://sos-project-23171-default-rtdb.firebaseio.com",
+  projectId: "sos-project-23171",
+  storageBucket: "sos-project-23171.firebasestorage.app",
+  messagingSenderId: "739080997565",
+  appId: "1:739080997565:web:8794ee9ba4f4f27de4c5d4"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-.container {
-  background: #fff;
-  padding: 30px 25px;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  max-width: 420px;
-  box-sizing: border-box;
-  transition: all 0.3s ease-in-out;
-}
-.container:hover { box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15); }
+/* -------- Local Storage Keys -------- */
+const LS = {
+  device: "sos_device_id",
+  meat: "sos_meat",
+  doneness: "sos_doneness",
+};
 
-h1 {
-  margin-bottom: 10px;
-  font-size: 28px;
-  text-align: center;
-  color: #1a1a1a;
-  letter-spacing: 0.5px;
-}
-h2 {
-  margin-top: 25px;
-  font-size: 18px;
-  color: #333;
-  border-bottom: 2px solid #007bff;
-  display: inline-block;
-  padding-bottom: 3px;
-}
+/* -------- Utilities -------- */
+const $ = (sel) => document.querySelector(sel);
+const byId = (id) => document.getElementById(id);
+const show = (el) => el && el.classList.remove("hidden");
+const hide = (el) => el && el.classList.add("hidden");
+const stamp = (el) => el && (el.textContent = `(updated ${new Date().toLocaleTimeString()})`);
 
-label { display: block; margin-bottom: 6px; font-weight: 600; }
-
-select, input {
-  width: 100%;
-  padding: 10px;
-  font-size: 16px;
-  margin-bottom: 15px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  box-sizing: border-box;
-  transition: 0.2s;
+function openNav() {
+  const navDrawer = byId("navDrawer");
+  const navToggle = byId("navToggle");
+  const backdrop = byId("backdrop");
+  navDrawer.classList.add("open");
+  backdrop.classList.remove("hidden");
+  navToggle.setAttribute("aria-expanded", "true");
+  navDrawer.setAttribute("aria-hidden", "false");
+  document.body.classList.add("no-scroll");
 }
-select:focus, input:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 5px rgba(0, 123, 255, 0.4);
-  outline: none;
+function closeNav() {
+  const navDrawer = byId("navDrawer");
+  const navToggle = byId("navToggle");
+  const backdrop = byId("backdrop");
+  navDrawer.classList.remove("open");
+  backdrop.classList.add("hidden");
+  navToggle.setAttribute("aria-expanded", "false");
+  navDrawer.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("no-scroll");
+}
+function wireNav() {
+  const navToggle = byId("navToggle");
+  const backdrop = byId("backdrop");
+  if (navToggle) navToggle.addEventListener("click", () => (byId("navDrawer").classList.contains("open") ? closeNav() : openNav()));
+  if (backdrop) backdrop.addEventListener("click", closeNav);
 }
 
-/* Buttons */
-button {
-  padding: 10px 20px;
-  font-size: 16px;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.3s ease;
+/* -------- Shared Device Helpers -------- */
+function getSavedDevice() {
+  return localStorage.getItem(LS.device) || "";
 }
-button:hover { transform: scale(1.03); }
-
-#setDeviceBtn {
-  background-color: #007bff;
-  display: block;
-  margin: 10px auto;
-  width: 70%;
-  max-width: 250px;
-  text-align: center;
+function setSavedDevice(id) {
+  localStorage.setItem(LS.device, id);
 }
-#setDeviceBtn:hover { background-color: #0056b3; }
-
-#startBtn { background-color: #28a745; }
-#startBtn:hover { background-color: #218838; }
-#stopBtn { background-color: #dc3545; }
-#stopBtn:hover { background-color: #b02a37; }
-
-.buttons {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 10px;
+function saveSelections(meat, doneness) {
+  localStorage.setItem(LS.meat, meat || "");
+  localStorage.setItem(LS.doneness, doneness || "");
+}
+function restoreSelections(meatSelect, donenessSelect, donenessNote) {
+  const meat = localStorage.getItem(LS.meat) || "";
+  const done = localStorage.getItem(LS.doneness) || "";
+  if (meat && meatSelect) meatSelect.value = meat;
+  updateDonenessForMeat(meatSelect, donenessSelect, donenessNote);
+  if (done && donenessSelect) donenessSelect.value = done;
+}
+function updateDonenessForMeat(meatSelect, donenessSelect, donenessNote) {
+  if (!meatSelect || !donenessSelect) return;
+  const meat = meatSelect.value;
+  if (meat === "Chicken") {
+    donenessSelect.value = "Well Done";
+    donenessSelect.disabled = true;
+    if (donenessNote) show(donenessNote);
+  } else {
+    donenessSelect.disabled = false;
+    if (donenessSelect.value === "Well Done") donenessSelect.value = "";
+    if (donenessNote) hide(donenessNote);
+  }
 }
 
-#status { font-style: italic; margin-top: 10px; color: #007bff; }
+/* -------- Page Initializers -------- */
+async function initDevicePage() {
+  const input = byId("deviceIDInput");
+  const btn = byId("setDeviceBtn");
+  const confirm = byId("deviceConfirmation");
 
-.device-section, .live-section, .control-section, .project-section {
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 15px 20px;
-  margin-bottom: 20px;
-  background-color: #f9f9f9;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+  // Pre-fill with saved device, if any
+  const saved = getSavedDevice();
+  if (saved && input) input.value = saved;
+
+  if (btn) {
+    btn.addEventListener("click", async () => {
+      const id = (input.value || "").trim();
+      if (!id) { alert("Please enter a device ID."); return; }
+      try {
+        const deviceRef = ref(db, `devices/${id}`);
+        const snap = await get(deviceRef);
+        if (!snap.exists()) {
+          alert("Device ID not found in Firebase. Please check and try again.");
+          return;
+        }
+        setSavedDevice(id);
+        confirm.textContent = `Device ID set to: ${id}`;
+        show(confirm);
+      } catch (e) {
+        alert("Error checking device ID: " + e.message);
+      }
+    });
+  }
 }
 
-.note {
-  color: #555;
-  font-size: 0.9em;
-  margin-top: 5px;
-  background-color: #f1f1f1;
-  border-radius: 5px;
-  padding: 5px;
-  text-align: center;
+function initLivePage() {
+  const deviceId = getSavedDevice();
+  const warn = byId("liveWarning");
+  const tempSpan = byId("temp");
+  const statusSpan = byId("status");
+  const connectionSpan = byId("connection");
+  const wifiSpeedSpan = byId("wifiSpeed");
+  const tempAt = byId("tempAt");
+  const statusAt = byId("statusAt");
+  const connAt = byId("connAt");
+  const wifiAt = byId("wifiAt");
+
+  if (!deviceId) {
+    if (warn) {
+      warn.textContent = "No device selected. Go to Device ID page to set one.";
+      show(warn);
+    }
+    return;
+  }
+
+  // Subscribe to live data
+  const tempRef = ref(db, `devices/${deviceId}/liveData/temperature`);
+  const statusRef = ref(db, `devices/${deviceId}/liveData/status`);
+  const connectionRef = ref(db, `devices/${deviceId}/liveData/isConnected`);
+  const wifiSpeedRef = ref(db, `devices/${deviceId}/liveData/wifiSpeed`);
+
+  onValue(tempRef, (snap) => { if (tempSpan) tempSpan.textContent = snap.val() ?? "--"; stamp(tempAt); });
+  onValue(statusRef, (snap) => { if (statusSpan) statusSpan.textContent = snap.val() ?? "--"; stamp(statusAt); });
+  onValue(connectionRef, (snap) => { if (connectionSpan) connectionSpan.textContent = snap.val() ? "Connected ✅" : "Disconnected ⚠"; stamp(connAt); });
+  onValue(wifiSpeedRef, (snap) => { if (wifiSpeedSpan) wifiSpeedSpan.textContent = snap.val() ?? "--"; stamp(wifiAt); });
 }
 
-.alert {
-  background:#eef7ff; border:1px solid #cde2ff; color:#084298;
-  padding:8px 10px; border-radius:6px; margin-top:8px; text-align:center;
+function enablePrefsControls(enabled, meatSelect, donenessSelect, startBtn, stopBtn) {
+  if (meatSelect) meatSelect.disabled = !enabled;
+  if (donenessSelect) donenessSelect.disabled = !enabled;
+  if (startBtn) startBtn.disabled = !enabled;
+  if (stopBtn) stopBtn.disabled = !enabled;
 }
 
-.muted { color:#777; margin-left:6px; font-size:0.85em; }
-.hidden { display: none; }
+function initPrefsPage() {
+  const deviceId = getSavedDevice();
+  const meatSelect = byId("meatSelect");
+  const donenessSelect = byId("donenessSelect");
+  const donenessNote = byId("donenessNote");
+  const startBtn = byId("startBtn");
+  const stopBtn = byId("stopBtn");
+  const confirmText = byId("confirmation");
 
-/* Hamburger + Drawer */
-.hamburger {
-  position: fixed;
-  top: 14px; left: 14px;
-  width: 42px; height: 42px;
-  background: #1f2937;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  z-index: 1001;
-}
-.hamburger span {
-  display: block;
-  width: 22px; height: 2px; background: #fff;
-  margin: 3px 0; border-radius: 2px;
+  enablePrefsControls(!!deviceId, meatSelect, donenessSelect, startBtn, stopBtn);
+
+  if (!deviceId) {
+    if (confirmText) {
+      confirmText.textContent = "No device selected. Go to Device ID page to set one.";
+      show(confirmText);
+    }
+    return;
+  }
+
+  // Restore previous selections
+  restoreSelections(meatSelect, donenessSelect, donenessNote);
+
+  if (meatSelect) {
+    meatSelect.addEventListener("change", () => {
+      updateDonenessForMeat(meatSelect, donenessSelect, donenessNote);
+      saveSelections(meatSelect.value, donenessSelect.value);
+    });
+  }
+  if (donenessSelect) {
+    donenessSelect.addEventListener("change", () => {
+      saveSelections(meatSelect.value, donenessSelect.value);
+    });
+  }
+
+  async function sendPreferencesToast() {
+    const meat = meatSelect.value;
+    const doneness = donenessSelect.value;
+    if (!meat || !doneness) { alert("Select both meat type and doneness."); return false; }
+    try {
+      await update(ref(db, `devices/${deviceId}/settings`), { meatType: meat, doneness });
+      if (confirmText) {
+        confirmText.textContent = `✅ Preferences sent: ${meat} - ${doneness}`;
+        show(confirmText);
+        setTimeout(() => hide(confirmText), 2000);
+      }
+      return true;
+    } catch (e) {
+      alert("Error sending preferences: " + e.message);
+      return false;
+    }
+  }
+
+  if (startBtn) {
+    startBtn.addEventListener("click", async () => {
+      const ok = await sendPreferencesToast();
+      if (!ok) return;
+      try {
+        await update(ref(db, `devices/${deviceId}/settings`), { command: "start" });
+        if (confirmText) {
+          confirmText.textContent = `🔥 Cooking started: ${meatSelect.value} - ${donenessSelect.value}`;
+          show(confirmText);
+          setTimeout(() => hide(confirmText), 3000);
+        }
+      } catch (e) {
+        alert("Error: " + e.message);
+      }
+    });
+  }
+
+  if (stopBtn) {
+    stopBtn.addEventListener("click", async () => {
+      try {
+        await update(ref(db, `devices/${deviceId}/settings`), { command: "stop" });
+        if (confirmText) {
+          confirmText.textContent = "🛑 Cooking stopped.";
+          show(confirmText);
+          setTimeout(() => hide(confirmText), 3000);
+        }
+      } catch (e) {
+        alert("Error: " + e.message);
+      }
+    });
+  }
 }
 
-.nav-drawer {
-  position: fixed;
-  top: 0; left: 0;
-  width: 280px; max-width: 85vw;
-  height: 100vh;
-  background: #ffffff;
-  box-shadow: 2px 0 16px rgba(0,0,0,0.15);
-  transform: translateX(-100%);
-  transition: transform 0.25s ease;
-  padding: 18px 16px;
-  z-index: 1002;
-}
-.nav-drawer.open { transform: translateX(0); }
+/* -------- Boot per page -------- */
+wireNav();
 
-.nav-title { margin: 6px 4px 12px; font-size: 16px; color:#111827; }
-.nav-drawer ul { list-style: none; padding: 0; margin: 0; }
-.nav-drawer li { margin: 8px 0; }
-.nav-link {
-  display:block; padding:10px 12px; border-radius:8px; text-decoration: none;
-  color:#111827; border:1px solid #e5e7eb; background:#f9fafb;
-}
-.nav-link:hover { background:#eef2ff; border-color:#c7d2fe; }
+const pageHas = (id) => !!document.getElementById(id);
 
-.backdrop {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.35);
-  z-index: 1000;
-}
-
-/* Responsive */
-@media screen and (max-width: 480px) {
-  .container { padding: 20px 15px; }
-  h1 { font-size: 24px; margin-bottom: 15px; }
-  h2 { font-size: 16px; }
-  button, select, input { font-size: 14px; padding: 8px; }
-  .buttons { flex-direction: column; }
-  #setDeviceBtn { width: 80%; }
+// Decide which page we’re on by checking for unique elements
+if (pageHas("deviceIDInput") && pageHas("setDeviceBtn")) {
+  initDevicePage();
+} else if (pageHas("temp") && pageHas("wifiSpeed")) {
+  initLivePage();
+} else if (pageHas("meatSelect") && pageHas("donenessSelect")) {
+  initPrefsPage();
+} else {
+  // index.html: just nav + description (nothing else needed)
 }
