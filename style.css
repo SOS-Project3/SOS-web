@@ -16,7 +16,7 @@ body {
   max-width: 980px;
 }
 .hidden { display: none; }
-.modal.hidden { display: none; } /* FIX: ensures modal hides properly */
+.modal.hidden { display: none; } /* ensure modal hides properly */
 h1,h2 { text-align:center; color:#1a1a1a; margin-top:0; }
 
 /* Banner */
@@ -108,6 +108,9 @@ button:active { transform: scale(.98); }
   font-weight: 600;
 }
 
+/* Meta */
+.live-meta { margin-top: 12px; text-align: center; color: #475569; }
+
 /* Hamburger + menu */
 .hamburger {
   position: fixed;
@@ -143,11 +146,7 @@ button:active { transform: scale(.98); }
   padding: 60px 16px;
   z-index: 1000;
 }
-.side-menu ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
+.side-menu ul { list-style: none; padding: 0; margin: 0; }
 .side-menu li { margin: 10px 0; }
 .side-menu a {
   display: block;
