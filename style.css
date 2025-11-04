@@ -16,7 +16,7 @@ body {
   max-width: 980px;
 }
 .hidden { display: none; }
-.modal.hidden { display: none; } /* ensure modal hides properly */
+.modal.hidden { display: none; }
 h1,h2 { text-align:center; color:#1a1a1a; margin-top:0; }
 
 /* Banner */
@@ -47,12 +47,16 @@ button:active { transform: scale(.98); }
 .btn-stop { background: #dc3545; }
 .btn-apply { background: #007bff; width: 100%; margin-top: 8px; }
 
-/* Notes */
-.success-text {
-  color: #117a37;
+/* Center the Set Device button */
+#setDeviceBtn {
+  display: block;
+  margin: 12px auto;
+  min-width: 220px;
   text-align: center;
-  margin-top: 10px;
 }
+
+/* Notes */
+.success-text { color: #117a37; text-align: center; margin-top: 10px; }
 .note-orange {
   color: #9a6700;
   background: #fff4e5;
@@ -63,146 +67,8 @@ button:active { transform: scale(.98); }
   margin: 8px 0 16px;
 }
 
-/* Layout */
+/* Grid Layout */
 .tips-grid { display: grid; grid-template-rows: repeat(4, auto); gap: 12px; }
 .tips-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .tip-card {
   border: 1px solid #e5e7eb;
-  background: #fafafa;
-  border-radius: 10px;
-  padding: 12px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-}
-.tip-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.tip-badge {
-  background: #111827;
-  color: #fff;
-  padding: 4px 8px;
-  border-radius: 999px;
-  font-size: 12px;
-}
-
-/* Progress bar */
-.progress {
-  position: relative;
-  height: 16px;
-  background: #e5e7eb;
-  border-radius: 999px;
-  overflow: hidden;
-}
-.progress-bar {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 0%;
-  background: linear-gradient(90deg, #007bff 0%, #28a745 100%);
-}
-.progress-label {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 12px;
-  color: #fff;
-  font-weight: 600;
-}
-
-/* Meta */
-.live-meta { margin-top: 12px; text-align: center; color: #475569; }
-
-/* Hamburger + menu */
-.hamburger {
-  position: fixed;
-  top: 14px;
-  left: 14px;
-  width: 42px;
-  height: 42px;
-  background: #111827;
-  border: none;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  z-index: 1001;
-  cursor: pointer;
-}
-.hamburger span {
-  display: block;
-  width: 22px;
-  height: 2px;
-  background: #fff;
-  margin: 3px 0;
-  border-radius: 2px;
-}
-.side-menu {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 260px;
-  max-width: 85vw;
-  height: 100vh;
-  background: #fff;
-  box-shadow: 2px 0 16px rgba(0,0,0,0.15);
-  padding: 60px 16px;
-  z-index: 1000;
-}
-.side-menu ul { list-style: none; padding: 0; margin: 0; }
-.side-menu li { margin: 10px 0; }
-.side-menu a {
-  display: block;
-  padding: 10px 12px;
-  color: #111827;
-  text-decoration: none;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-}
-.side-menu a:hover {
-  background: #eef2ff;
-  border-color: #c7d2fe;
-}
-
-/* Modal */
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.45);
-  display: grid;
-  place-items: center;
-  z-index: 1003;
-}
-.modal-card {
-  background: #fff;
-  padding: 18px 18px;
-  border-radius: 12px;
-  width: 92%;
-  max-width: 420px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-  text-align: center;
-}
-.modal-card h3 { margin: 0 0 8px; }
-.modal-card p { margin: 0 0 12px; }
-
-/* Forms */
-input, select {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  box-sizing: border-box;
-}
-label { display: block; margin-top: 8px; font-weight: 600; }
-
-/* Buttons container */
-.buttons {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 12px;
-}
-
-/* Responsive */
-@media (max-width: 720px) {
-  .tips-row { grid-template-columns: 1fr; }
-  .container { padding: 16px; }
-}
