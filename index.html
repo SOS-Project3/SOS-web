@@ -7,10 +7,10 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- ESP disconnect banner -->
+  <!-- ESP disconnect banner (pushes content down; nav still on top) -->
   <div id="connBanner" class="banner hidden">⚠️ ESP disconnected</div>
 
-  <!-- Always visible navigation button -->
+  <!-- Always-visible navigation button -->
   <button id="menuToggle" class="hamburger" aria-label="Open navigation">
     <span></span><span></span><span></span>
   </button>
@@ -88,6 +88,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    /* -------- Elements -------- */
     const menuBtn = document.getElementById("menuToggle");
     const sideMenu = document.getElementById("sideMenu");
     const navLinks = document.querySelectorAll("[data-nav]");
@@ -105,6 +106,7 @@
     const modalMsg = document.getElementById("modalMsg");
     const modalClose = document.getElementById("modalClose");
 
+    /* -------- State & constants -------- */
     const LS_DEVICE = "sos_device_id";
     const ALL_TIPS = [1,2,3,4,5,6,7,8];
     const TIP_ROWS = [[4,8],[3,7],[2,6],[1,5]];
@@ -124,13 +126,14 @@
     const tipCompleteShown = new Set();
     let currentDeviceID = null;
 
+    /* -------- Utils -------- */
     const show = el => el.classList.remove("hidden");
     const hide = el => el.classList.add("hidden");
     const el = (t,c)=>{const e=document.createElement(t); if(c)e.className=c; return e;};
     const targetTempFor = (meat,done)=>TARGET_MAP.get(meat)?.[done]||null;
     const isChicken = (m) => (m || "").toLowerCase() === "chicken";
 
-    /* ---- Chicken UI enforcement ---- */
+    /* ---- Chicken UI enforcement (from first load) ---- */
     function enforceChickenUI(meatSel, doneSel) {
       if (!meatSel || !doneSel) return;
       const meat = meatSel.value;
@@ -166,7 +169,7 @@
     document.addEventListener("keydown",(e)=>{ if(e.key === "Escape") hide(modal); });
     function toastOk(msg){ confirmText.textContent = msg; show(confirmText); setTimeout(()=>hide(confirmText),2000); }
 
-    /* ---- Build Grids ---- */
+    /* ---- Build Grids (4–4 layout) ---- */
     function buildLiveGrid(){
       liveGrid.innerHTML="";
       TIP_ROWS.forEach(([L,R])=>{
@@ -197,12 +200,15 @@
           const card=el("div","tip-card");
           const header=el("div","tip-header");
           header.innerHTML = `<span class="tip-badge">Tip ${t}</span>`;
+
           const meatSel=el("select"); meatSel.id=`meat${t}`;
           const doneSel=el("select"); doneSel.id=`done${t}`;
 
+          // Put Chicken first so lock applies on first render
           MEATS.forEach(m=>{const o=el("option");o.value=m;o.textContent=m;meatSel.appendChild(o);});
           DONENESS.forEach(d=>{const o=el("option");o.value=d;o.textContent=d;doneSel.appendChild(o);});
 
+          // Enforce on create + on change
           enforceChickenUI(meatSel, doneSel);
           meatSel.addEventListener("change",()=>enforceChickenUI(meatSel,doneSel));
 
@@ -244,7 +250,7 @@
       setCurrentDevice(id);
     });
 
-    // Auto-connect
+    // Auto-connect to last device (can show banner if offline — nav still usable)
     const saved = localStorage.getItem(LS_DEVICE);
     if (saved) { deviceInput.value = saved; get(ref(db,`devices/${saved}`)).then(s=>{ if(s.exists()) setCurrentDevice(saved); }); }
 
@@ -252,8 +258,15 @@
     function subscribeDevice(id){
       onValue(ref(db,`devices/${id}/liveData/isConnected`), s => {
         const ok = !!s.val();
-        if (ok) hide(connBanner); else show(connBanner);
+        if (ok) {
+          hide(connBanner);
+          document.body.classList.remove('has-banner');
+        } else {
+          show(connBanner);
+          document.body.classList.add('has-banner'); // push content down
+        }
       });
+
       onValue(ref(db,`devices/${id}/liveData/wifiSpeed`), s => wifiSpeedSpan.textContent = s.val() ?? "--");
 
       ALL_TIPS.forEach(t=>{
@@ -262,14 +275,31 @@
           const meat = v.meatType || "--";
           const done = v.doneness || "--";
           tipSettings[t] = { meatType: meat, doneness: done };
+
+          // Live labels
           document.getElementById(`liveMeat${t}`).textContent = meat;
           document.getElementById(`liveDone${t}`).textContent = done;
           const tgt = targetTempFor(meat,done);
           document.getElementById(`target${t}`).textContent = tgt ?? "--";
+
+          // Reflect into selects AND keep the Chicken lock
+          const meatSel=document.getElementById(`meat${t}`);
+          const doneSel=document.getElementById(`done${t}`);
+          if (meatSel && MEATS.includes(meat)) meatSel.value = meat;
+          if (doneSel) {
+            // repopulate doneness before enforcing
+            doneSel.innerHTML = "";
+            DONENESS.forEach(d=>{const o=document.createElement("option"); o.value=d; o.textContent=d; doneSel.appendChild(o);});
+            if (DONENESS.includes(done)) doneSel.value = done;
+            enforceChickenUI(meatSel, doneSel);
+          }
         });
+
+        // Tip live temperature → progress + modal
         onValue(ref(db,`devices/${id}/liveData/tips/${t}/temperature`), s=>{
           const temp = Number(s.val() ?? 0);
           document.getElementById(`temp${t}`).textContent = temp.toFixed(1);
+
           const { meatType, doneness } = tipSettings[t] || {};
           const tgt = targetTempFor(meatType, doneness);
           const bar = document.getElementById(`pbar${t}`);
@@ -282,6 +312,9 @@
               tipCompleteShown.add(t);
               openModal(`Tip ${t} reached target temperature (${tgt}°C).`);
             }
+          } else if (bar && lab) {
+            bar.style.width = "0%";
+            lab.textContent = "--%";
           }
         });
       });
