@@ -106,7 +106,7 @@ button:active { transform: scale(.98); }
 /* Center the Set Device button */
 #setDeviceBtn {
   display: block;
-  margin: 12px auto;     /* center horizontally */
+  margin: 12px auto;
   min-width: 220px;
   text-align: center;
 }
