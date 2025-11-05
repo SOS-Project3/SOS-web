@@ -261,10 +261,8 @@
             const chosenMeat = meatSel.value;
             const chosenDone = isChicken(chosenMeat) ? "Well Done" : doneSel.value;
 
-            // Save to DB
             await update(ref(db,`devices/${currentDeviceID}/settings/tips/${t}`), { meatType: chosenMeat, doneness: chosenDone });
 
-            // Reflect to UI
             tipSettings[t] = { meatType: chosenMeat, doneness: chosenDone };
             document.getElementById(`liveMeat${t}`).textContent = chosenMeat;
             document.getElementById(`liveDone${t}`).textContent = chosenDone;
@@ -294,7 +292,6 @@
         if (!meatSel || !doneSel) return;
 
         if (skewerMode === SK_MODE.CHICKEN) {
-          // Force Chicken/WD, lock controls
           meatSel.innerHTML = `<option value="Chicken">Chicken</option>`;
           meatSel.value = "Chicken";
           meatSel.disabled = true;
@@ -305,13 +302,11 @@
 
           if (applyBtn) applyBtn.disabled = true;
 
-          // Reflect to UI labels/targets
           tipSettings[t] = { meatType: "Chicken", doneness: "Well Done" };
           document.getElementById(`liveMeat${t}`).textContent = "Chicken";
           document.getElementById(`liveDone${t}`).textContent = "Well Done";
           document.getElementById(`target${t}`).textContent = targetTempFor("Chicken","Well Done") ?? "--";
         } else {
-          // Meat mode: enable per-tip and remove Chicken option
           meatSel.disabled = false;
           doneSel.disabled = false;
           if (applyBtn) applyBtn.disabled = false;
@@ -321,14 +316,12 @@
             const o=document.createElement("option");
             o.value=m; o.textContent=m; meatSel.appendChild(o);
           });
-          // keep previous value if valid
           const prev = tipSettings[t]?.meatType;
           if (prev && NON_CHICKEN_MEATS.includes(prev)) meatSel.value = prev;
           buildDonenessOptions(doneSel, tipSettings[t]?.doneness || "Medium");
         }
       });
 
-      // Bulk controls
       if (skewerMode === SK_MODE.CHICKEN) {
         bulkMeat.innerHTML = `<option value="Chicken">Chicken</option>`;
         bulkDone.innerHTML = "<option value='Well Done'>Well Done</option>";
@@ -347,7 +340,6 @@
       const payload = {};
       payload[`devices/${currentDeviceID}/settings/skewerMode`] = mode;
 
-      // If CHICKEN: set all tips to Chicken/WD in one update
       if (mode === SK_MODE.CHICKEN) {
         ALL_TIPS.forEach(t=>{
           payload[`devices/${currentDeviceID}/settings/tips/${t}/meatType`] = "Chicken";
@@ -374,6 +366,7 @@
       const meat = bulkMeat.value;
       const done = bulkDone.value;
 
+      // 1) Write once to Firebase
       const payload = {};
       ALL_TIPS.forEach(t=>{
         payload[`devices/${currentDeviceID}/settings/tips/${t}/meatType`] = meat;
@@ -381,13 +374,24 @@
       });
       await update(ref(db), payload);
 
-      // Local reflect
+      // 2) Immediate UI sync: Set Preferences (selects) + Live Data labels/targets
       ALL_TIPS.forEach(t=>{
+        // Set Preferences selects
+        const meatSel = document.getElementById(`meat${t}`);
+        const doneSel = document.getElementById(`done${t}`);
+        if (meatSel) meatSel.value = meat;
+        if (doneSel) {
+          doneSel.disabled = false;
+          buildDonenessOptions(doneSel, done);
+        }
+
+        // Local state + Live labels/targets
         tipSettings[t] = { meatType: meat, doneness: done };
         document.getElementById(`liveMeat${t}`).textContent = meat;
         document.getElementById(`liveDone${t}`).textContent = done;
         document.getElementById(`target${t}`).textContent = targetTempFor(meat, done) ?? "--";
       });
+
       toastOk(`Applied to all tips: ${meat} • ${done}`);
     });
 
@@ -396,7 +400,6 @@
       if (!currentDeviceID) return;
       tipCompleteShown.clear();
       await update(ref(db,`devices/${currentDeviceID}/settings`), { command: "start" });
-      // navigate to Live Data
       document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
       document.getElementById("page3").classList.remove("hidden");
       toastOk("🔥 Cooking started");
@@ -411,7 +414,6 @@
 
     /* ---------- Firebase Listeners ---------- */
     function subscribeDevice(id){
-      // Connection flag
       onValue(ref(db,`devices/${id}/liveData/isConnected`), s=>{
         const ok = !!s.val();
         if (ok) {
@@ -424,12 +426,10 @@
         }
       });
 
-      // Optional: RTT
       onValue(ref(db,`devices/${id}/liveData/wifiSpeed`), s=>{
         wifiSpeedSpan.textContent = s.val() ?? "--";
       });
 
-      // Mode
       onValue(ref(db,`devices/${id}/settings/skewerMode`), s=>{
         const v = s.val();
         if (v === SK_MODE.CHICKEN || v === SK_MODE.MEAT) {
@@ -440,7 +440,6 @@
         }
       });
 
-      // Settings per tip
       ALL_TIPS.forEach(t=>{
         onValue(ref(db,`devices/${id}/settings/tips/${t}`), s=>{
           const v = s.val() || {};
@@ -448,12 +447,22 @@
           const done = v.doneness || "--";
           tipSettings[t] = { meatType: meat, doneness: done };
 
+          // Live labels + target
           document.getElementById(`liveMeat${t}`).textContent = meat;
           document.getElementById(`liveDone${t}`).textContent = done;
           document.getElementById(`target${t}`).textContent = targetTempFor(meat,done) ?? "--";
+
+          // Also reflect into Set Preferences selects (keeps UI consistent even on echo)
+          const meatSel=document.getElementById(`meat${t}`);
+          const doneSel=document.getElementById(`done${t}`);
+          if (skewerMode === SK_MODE.MEAT) {
+            if (meatSel && NON_CHICKEN_MEATS.includes(meat)) meatSel.value = meat;
+            if (doneSel) { doneSel.disabled = false; buildDonenessOptions(doneSel, DONENESS.includes(done) ? done : "Medium"); }
+          } else {
+            // Chicken mode UI already locked; nothing else to do
+          }
         });
 
-        // Live temps → progress + modal (once)
         onValue(ref(db,`devices/${id}/liveData/tips/${t}/temperature`), s=>{
           const temp = Number(s.val() ?? NaN);
           if (!Number.isFinite(temp)) return;
@@ -515,7 +524,7 @@
     function buildUI(){
       buildLiveGrid();
       buildPrefsGrid();
-      // Defaults before DB echoes
+      // Pre-populate UI with reasonable defaults until DB echoes back
       ALL_TIPS.forEach(t=>{
         tipSettings[t] = { meatType: "Tri tip", doneness: "Medium" };
         document.getElementById(`liveMeat${t}`).textContent = "Tri tip";
