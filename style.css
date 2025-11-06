@@ -44,7 +44,7 @@ body.has-banner .container { margin-top: 44px; }
   background: #111827;
   border: none;
   border-radius: 10px;
-  display: flex;
+  display: flex;               /* center the 3 dashes perfectly */
   flex-direction: column;
   justify-content: center;
   align-items: center;
