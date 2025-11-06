@@ -1,3 +1,4 @@
+/* Base */
 body {
   font-family: "Segoe UI", Arial, sans-serif;
   background: #f0f2f5;
@@ -7,7 +8,6 @@ body {
   padding: 20px;
   margin: 0;
 }
-
 .container {
   background: #fff;
   padding: 24px;
@@ -16,10 +16,12 @@ body {
   width: 100%;
   max-width: 980px;
 }
-
 .hidden { display: none; }
-h1,h2 { text-align:center; margin-top:0; }
+.modal.hidden { display: none; }
+h1,h2 { text-align:center; color:#1a1a1a; margin-top:0; }
+ul.bullets { max-width: 740px; margin: 10px auto 0; }
 
+/* Banner (below nav, above content) */
 .banner {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -27,49 +29,50 @@ h1,h2 { text-align:center; margin-top:0; }
   color: #fff;
   text-align: center;
   padding: 8px;
-  z-index: 1000;
+  z-index: 1000; /* below hamburger (1200) and side-menu (1100) */
   font-weight: 600;
 }
-
 body.has-banner .container { margin-top: 44px; }
 
-/* ✅ Centered hamburger icon */
+/* ✅ Hamburger (always visible, perfectly centered dashes) */
 .hamburger {
   position: fixed;
   top: 14px;
   left: 14px;
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   background: #111827;
   border: none;
   border-radius: 10px;
-  display: flex;
+  display: flex;             /* center the dashes */
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  z-index: 1200;
+  justify-content: center;
+  gap: 6px;                   /* equal spacing between dashes */
+  z-index: 1200;              /* above banner */
   cursor: pointer;
 }
-
 .hamburger span {
+  display: block;
   width: 22px;
   height: 2px;
   background: #fff;
-  margin: 3px 0;
   border-radius: 2px;
 }
 
+/* Side menu above banner */
 .side-menu {
   position: fixed;
-  top: 0; left: 0;
+  top: 0;
+  left: 0;
   width: 260px;
+  max-width: 85vw;
   height: 100vh;
   background: #fff;
   box-shadow: 2px 0 16px rgba(0,0,0,0.15);
   padding: 60px 16px;
-  z-index: 1100;
+  z-index: 1100; /* above banner */
 }
-
 .side-menu ul { list-style: none; padding: 0; margin: 0; }
 .side-menu li { margin: 10px 0; }
 .side-menu a {
@@ -86,6 +89,7 @@ body.has-banner .container { margin-top: 44px; }
   border-color: #c7d2fe;
 }
 
+/* Buttons */
 button {
   padding: 10px 16px;
   font-size: 15px;
@@ -93,14 +97,197 @@ button {
   border-radius: 8px;
   color: #fff;
   cursor: pointer;
+  transition: transform .1s ease;
 }
-
-#setDeviceBtn, .btn-primary, .btn-apply { background: #007bff; }
+button:active { transform: scale(.98); }
+#setDeviceBtn, .btn-primary { background: #007bff; }
 .btn-start { background: #28a745; }
 .btn-stop { background: #dc3545; }
+.btn-apply { background: #007bff; width: 100%; margin-top: 8px; }
 
-.success-text {
-  color: #117a37;
+/* Center the Set Device button */
+#setDeviceBtn {
+  display: block;
+  margin: 12px auto;
+  min-width: 220px;
   text-align: center;
-  margin-top: 10px;
+}
+
+/* Notes */
+.success-text { color: #117a37; text-align: center; margin-top: 10px; }
+.note-orange {
+  color: #9a6700;
+  background: #fff4e5;
+  border: 1px solid #f1c96a;
+  padding: 8px 10px;
+  border-radius: 6px;
+  text-align: center;
+  margin: 8px 0 16px;
+}
+
+/* Mode bar */
+.mode-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.mode-title { font-weight: 700; color: #111827; margin-right: 4px; }
+.mode-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 6px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.mode-pill input { accent-color: #111827; }
+
+/* Bulk controls */
+.bulk-controls {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0 14px;
+  padding: 10px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+.bulk-label { font-weight: 600; color: #111827; }
+
+/* Tip grids (desktop default) */
+.tips-grid { display: grid; grid-template-rows: repeat(4, auto); gap: 12px; }
+.tips-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.tip-card {
+  border: 1px solid #e5e7eb;
+  background: #fafafa;
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.tip-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.tip-badge {
+  background: #111827;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+.tip-label { color:#374151; font-size: 14px; }
+.tip-line { margin: 6px 0; font-size: 14px; }
+
+/* Progress bar */
+.progress {
+  position: relative;
+  height: 16px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-bar {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 0%;
+  background: linear-gradient(90deg, #007bff 0%, #28a745 100%);
+}
+.progress-label {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Live meta */
+.live-meta { margin-top: 12px; text-align: center; color: #475569; }
+
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: grid;
+  place-items: center;
+  z-index: 1300; /* above everything */
+}
+.modal-card {
+  background: #fff;
+  padding: 18px 18px;
+  border-radius: 12px;
+  width: 92%;
+  max-width: 420px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  text-align: center;
+}
+.modal-card h3 { margin: 0 0 8px; }
+.modal-card p { margin: 0 0 12px; }
+
+/* Forms */
+input, select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+label { display: block; margin-top: 8px; font-weight: 600; }
+
+/* Buttons container */
+.buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+/* ---------------------- Responsive Tweaks ---------------------- */
+@media (max-width: 900px) {
+  .container { padding: 18px; }
+  .tips-grid { gap: 10px; }
+  .tips-row { gap: 10px; }
+  .tip-card { padding: 10px; }
+  .tip-label, .tip-line { font-size: 13.5px; }
+  .progress { height: 14px; }
+  .bulk-controls { grid-template-columns: auto 1fr 1fr auto; }
+}
+@media (max-width: 640px) {
+  .container { padding: 14px; }
+  .tips-grid { gap: 8px; }
+  .tips-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tip-card { padding: 10px; }
+  .tip-badge { font-size: 11px; padding: 3px 7px; }
+  .tip-label, .tip-line { font-size: 13px; }
+  .progress { height: 12px; }
+  .progress-label { font-size: 11px; }
+  .side-menu { width: 78vw; }
+
+  .bulk-controls {
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: auto;
+  }
+  .bulk-label {
+    grid-column: 1 / span 2;
+    margin-bottom: 4px;
+  }
+}
+@media (max-width: 380px) {
+  .tips-row { gap: 6px; }
+  .tip-card { padding: 8px; }
+  .tip-label, .tip-line { font-size: 12px; }
+  .progress { height: 11px; }
+  .progress-label { font-size: 10px; }
 }
