@@ -42,6 +42,19 @@
       <h2>Device ID</h2>
       <input type="text" id="deviceIDInput" placeholder="Enter device ID" />
       <button id="setDeviceBtn">Set Device</button>
+
+      <!-- ✅ NEW: Tips cover toggle (servo) -->
+      <div class="servo-toggle">
+        <span class="servo-label">Tips Cover</span>
+
+        <label class="switch" aria-label="Open/Close tips cover">
+          <input type="checkbox" id="tipsCoverToggle" disabled />
+          <span class="slider"></span>
+        </label>
+
+        <span id="tipsCoverState" class="servo-state">--</span>
+      </div>
+
       <p id="deviceConfirmation" class="hidden success-text"></p>
     </section>
 
@@ -152,6 +165,10 @@
     const modalMsg = document.getElementById("modalMsg");
     const modalClose = document.getElementById("modalClose");
 
+    // ✅ NEW: servo toggle elements
+    const tipsCoverToggle = document.getElementById("tipsCoverToggle");
+    const tipsCoverState  = document.getElementById("tipsCoverState");
+
     /* ---------- State & constants ---------- */
     const LS_DEVICE = "sos_device_id";
     const ALL_TIPS = [1,2,3,4,5,6,7,8];
@@ -199,6 +216,14 @@
         o.value = v; o.textContent = v;
         sel.appendChild(o);
       });
+    }
+
+    // ✅ NEW: normalize cover value
+    function normalizeCoverState(v) {
+      const s = String(v ?? "").trim().toLowerCase();
+      if (s === "open") return "open";
+      if (s === "closed") return "closed";
+      return null;
     }
 
     /* ---------- Navigation ---------- */
@@ -380,13 +405,11 @@
 
       // 2) Immediate UI sync across BOTH pages
       ALL_TIPS.forEach(t=>{
-        // Set Preferences selects
         const meatSel = document.getElementById(`meat${t}`);
         const doneSel = document.getElementById(`done${t}`);
         if (meatSel) meatSel.value = meat;
         if (doneSel) { doneSel.disabled = false; buildDonenessOptions(doneSel, done); }
 
-        // Local state + Live labels/targets
         tipSettings[t] = { meatType: meat, doneness: done };
         document.getElementById(`liveMeat${t}`).textContent = meat;
         document.getElementById(`liveDone${t}`).textContent = done;
@@ -396,13 +419,12 @@
       toastOk(`Applied to all tips: ${meat} • ${done}`);
     });
 
-    /* ---------- Start/Stop (FIXED: write command with set()) ---------- */
+    /* ---------- Start/Stop ---------- */
     startAllBtn.addEventListener("click", async ()=>{
       if (!currentDeviceID) return alert("Set device first");
       try {
         tipCompleteShown.clear();
         await set(ref(db,`devices/${currentDeviceID}/settings/command`), "start");
-        // Jump to Live page
         document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
         document.getElementById("page3").classList.remove("hidden");
         toastOk("🔥 Cooking started");
@@ -424,9 +446,23 @@
       }
     });
 
+    /* ✅ NEW: Tips cover toggle write */
+    tipsCoverToggle.addEventListener("change", async () => {
+      if (!currentDeviceID) return alert("Set device first");
+
+      const newState = tipsCoverToggle.checked ? "open" : "closed";
+
+      try {
+        await set(ref(db, `devices/${currentDeviceID}/settings/tipsCover/state`), newState);
+        tipsCoverState.textContent = newState;
+      } catch (e) {
+        alert("Failed to update tips cover: " + e.message);
+        console.error(e);
+      }
+    });
+
     /* ---------- Firebase Listeners ---------- */
     function subscribeDevice(id){
-      // Connection banner
       onValue(ref(db,`devices/${id}/liveData/isConnected`), s=>{
         const ok = !!s.val();
         if (ok) {
@@ -438,12 +474,10 @@
         }
       });
 
-      // WiFi speed
       onValue(ref(db,`devices/${id}/liveData/wifiSpeed`), s=>{
         wifiSpeedSpan.textContent = s.val() ?? "--";
       });
 
-      // Mode from DB
       onValue(ref(db,`devices/${id}/settings/skewerMode`), s=>{
         const v = s.val();
         if (v === SK_MODE.CHICKEN || v === SK_MODE.MEAT) {
@@ -454,7 +488,20 @@
         }
       });
 
-      // Settings + live temps
+      // ✅ NEW: Tips cover state listener
+      onValue(ref(db, `devices/${id}/settings/tipsCover/state`), s => {
+        const v = normalizeCoverState(s.val());
+        if (v === "open") {
+          tipsCoverToggle.checked = true;
+          tipsCoverState.textContent = "open";
+        } else if (v === "closed") {
+          tipsCoverToggle.checked = false;
+          tipsCoverState.textContent = "closed";
+        } else {
+          tipsCoverState.textContent = "--";
+        }
+      });
+
       ALL_TIPS.forEach(t=>{
         onValue(ref(db,`devices/${id}/settings/tips/${t}`), s=>{
           const v = s.val() || {};
@@ -462,12 +509,10 @@
           const done = v.doneness || "--";
           tipSettings[t] = { meatType: meat, doneness: done };
 
-          // Live labels + target
           document.getElementById(`liveMeat${t}`).textContent = meat;
           document.getElementById(`liveDone${t}`).textContent = done;
           document.getElementById(`target${t}`).textContent = targetTempFor(meat,done) ?? "--";
 
-          // Reflect into Set Preferences (keeps UI synced even if updated elsewhere)
           const meatSel=document.getElementById(`meat${t}`);
           const doneSel=document.getElementById(`done${t}`);
           if (skewerMode === SK_MODE.MEAT) {
@@ -508,10 +553,13 @@
     async function setCurrentDevice(id){
       currentDeviceID=id; localStorage.setItem(LS_DEVICE,id);
       deviceConfirmation.textContent=`Device set: ${id}`; show(deviceConfirmation);
-      // enable controls on device selection
+
       startAllBtn.disabled = false;
       stopAllBtn.disabled = false;
-      // bulkApplyBtn enabled based on mode in applyModeUI()
+
+      // ✅ enable servo toggle only after device is set
+      tipsCoverToggle.disabled = false;
+
       subscribeDevice(id);
     }
 
@@ -523,7 +571,6 @@
       setCurrentDevice(id);
     });
 
-    // Auto-connect last device
     const saved = localStorage.getItem(LS_DEVICE);
     if (saved) {
       deviceInput.value = saved;
@@ -540,13 +587,14 @@
     function buildUI(){
       buildLiveGrid();
       buildPrefsGrid();
-      // Defaults before DB echoes
+
       ALL_TIPS.forEach(t=>{
         tipSettings[t] = { meatType: "Tri tip", doneness: "Medium" };
         document.getElementById(`liveMeat${t}`).textContent = "Tri tip";
         document.getElementById(`liveDone${t}`).textContent = "Medium";
         document.getElementById(`target${t}`).textContent = targetTempFor("Tri tip","Medium") ?? "--";
       });
+
       applyModeUI();
     }
     buildUI();
