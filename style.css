@@ -364,3 +364,68 @@ label { display: block; margin-top: 8px; font-weight: 600; }
   .progress { height: 11px; }
   .progress-label { font-size: 10px; }
 }
+
+/* ---------- Page 1 (responsive intro) ---------- */
+#page1 .hero {
+  margin-bottom: 16px;
+}
+
+#page1 .hero h1 {
+  margin: 0 0 10px;
+  line-height: 1.1;
+}
+
+#page1 .hero-sub {
+  margin: 0;
+  opacity: 0.9;
+  line-height: 1.6;
+  font-size: 1rem;
+  max-width: 70ch;
+}
+
+#page1 .page-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+  margin-top: 14px;
+}
+
+#page1 .card {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 14px;
+  padding: 14px 14px;
+  background: #fff;
+}
+
+#page1 .card-title {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+}
+
+#page1 .card p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+#page1 .card-accent {
+  border-color: rgba(0, 0, 0, 0.18);
+}
+
+#page1 .tips {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.7;
+}
+
+#page1 .tips li {
+  margin: 6px 0;
+}
+
+/* Desktop/tablet: two columns */
+@media (min-width: 860px) {
+  #page1 .page-grid {
+    grid-template-columns: 1.4fr 0.9fr;
+    align-items: start;
+  }
+}
+
